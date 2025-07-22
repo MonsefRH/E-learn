@@ -11,31 +11,31 @@ import { useNavigate } from "react-router-dom";
 
 const LearnerDashboard = () => {
   const navigate = useNavigate();
-  
+
   const [enrolledCourses] = useState([
-    { 
-      id: 1, 
-      title: "Introduction to Machine Learning", 
+    {
+      id: 1,
+      title: "Introduction to Java",
       instructor: "Dr. Sarah Wilson",
-      progress: 75, 
+      progress: 75,
       nextLesson: "Neural Networks Basics",
       totalLessons: 12,
       completedLessons: 9
     },
-    { 
-      id: 2, 
-      title: "Python Programming Fundamentals", 
+    {
+      id: 2,
+      title: "Python Programming Fundamentals",
       instructor: "Prof. Mike Johnson",
-      progress: 45, 
+      progress: 45,
       nextLesson: "Object-Oriented Programming",
       totalLessons: 8,
       completedLessons: 4
     },
-    { 
-      id: 3, 
-      title: "Data Science Essentials", 
+    {
+      id: 3,
+      title: "Data Science Essentials",
       instructor: "Dr. Emily Chen",
-      progress: 20, 
+      progress: 20,
       nextLesson: "Data Cleaning Techniques",
       totalLessons: 15,
       completedLessons: 3
@@ -53,7 +53,7 @@ const LearnerDashboard = () => {
   };
 
   return (
-    <DashboardLayout 
+    <DashboardLayout
       title="My Learning Dashboard"
       breadcrumbs={[{ label: "Dashboard" }]}
     >
@@ -69,7 +69,7 @@ const LearnerDashboard = () => {
               <p className="text-sm text-muted-foreground">Keep learning!</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Average Progress</CardTitle>
@@ -81,7 +81,7 @@ const LearnerDashboard = () => {
               <p className="text-sm text-muted-foreground">Across all courses</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Lessons Completed</CardTitle>
@@ -101,7 +101,7 @@ const LearnerDashboard = () => {
             <TabsTrigger value="discover">Discover</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="current" className="space-y-4">
             <div className="grid gap-6">
               {enrolledCourses.map((course) => (
@@ -125,7 +125,7 @@ const LearnerDashboard = () => {
                       </div>
                       <Progress value={course.progress} className="h-2" />
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Next: {course.nextLesson}</p>
@@ -146,7 +146,7 @@ const LearnerDashboard = () => {
               ))}
             </div>
           </TabsContent>
-          
+
           <TabsContent value="discover" className="space-y-4">
             <Card>
               <CardHeader>
@@ -180,7 +180,7 @@ const LearnerDashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="achievements" className="space-y-4">
             <Card>
               <CardHeader>

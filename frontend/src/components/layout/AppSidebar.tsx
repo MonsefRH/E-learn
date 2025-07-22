@@ -12,18 +12,18 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { 
-  BookOpen, 
-  Users, 
-  GraduationCap, 
-  BarChart3, 
-  Settings, 
+import {
+  BookOpen,
+  Users,
+  GraduationCap,
+  BarChart3,
+  Settings,
   Home,
   PlusCircle,
   Library,
   Award,
   MessageCircle,
-  LogOut
+  LogOut, Play
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -35,6 +35,7 @@ export function AppSidebar() {
   const managerItems = [
     { title: "Dashboard", url: "/dashboard", icon: Home },
     { title: "Courses", url: "/admin/courses", icon: BookOpen },
+    { title: "Sessions", url: "/admin/sessions", icon: Play },
     { title: "Users", url: "/users", icon: Users },
     { title: "Analytics", url: "/analytics", icon: BarChart3 },
     { title: "Settings", url: "/settings", icon: Settings },
@@ -89,11 +90,11 @@ export function AppSidebar() {
           </div>
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent className="px-2 py-4">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-gray-500 px-3 mb-2">
-            {user?.role === "manager" ? "Management" : 
+            {user?.role === "manager" ? "Management" :
              user?.role === "trainer" ? "Teaching" : "Learning"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -102,8 +103,8 @@ export function AppSidebar() {
                 const isActive = location.pathname === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
+                    <SidebarMenuButton
+                      asChild
                       isActive={isActive}
                       className="w-full justify-start px-3 py-2 text-sm font-medium transition-colors rounded-lg"
                     >
@@ -122,7 +123,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
+
       <SidebarFooter className="border-t border-gray-200 p-4">
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
@@ -140,9 +141,9 @@ export function AppSidebar() {
               </p>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleLogout}
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
           >

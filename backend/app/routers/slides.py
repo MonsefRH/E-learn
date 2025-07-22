@@ -55,7 +55,7 @@ async def get_slide_html(course_id: str, slide_number: int):
 @router.get("/api/presentations/{course_id}/audio/{slide_number}")
 async def get_audio(course_id: int, slide_number: int):
     def generate():
-        with open(f"presentations/{course_id}/audios/chatbot{slide_number}.mp3", "rb") as audio_file:
+        with open(f"presentations/{course_id}/audios/audio{slide_number}.mp3", "rb") as audio_file:
             yield from audio_file
 
     return StreamingResponse(

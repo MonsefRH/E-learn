@@ -2,17 +2,15 @@ from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from typing import Optional, List
 
-
 class CourseBase(BaseModel):
     title: str
     description: str
     category_id: int = Field(..., description="Category ID")
-    teacher_id: Optional[int] = Field(None, description="Teacher ID")
 
-    @validator('category_id', 'teacher_id', pre=True)
+    @validator('category_id', pre=True)
     def convert_to_int(cls, v):
         if v is None:
-            return v
+            raise ValueError("category_id cannot be None")
         try:
             return int(v)
         except (ValueError, TypeError):
@@ -25,7 +23,6 @@ class CourseUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     category_id: Optional[int] = None
-    teacher_id: Optional[int] = None
     deadline: Optional[datetime] = None
     is_active: Optional[bool] = None
 

@@ -1,8 +1,11 @@
 import json
-import logging
+import subprocess
+import tempfile
 import google.generativeai as genai
 import os
 import base64
+import whisperx
+import logging
 import asyncio
 
 from dotenv import load_dotenv
@@ -32,28 +35,63 @@ class ConnectionManager:
         logger.info(f"Sending response to {websocket.client}: {data}")
         await websocket.send_text(json.dumps(data))
 
+
 class SpeechToTextService:
-    def __init__(self):
-        self.client = speech.SpeechClient()
+    def __init__(self, model_size="small"):
+        self.model = whisperx.load_model(model_size, device="cpu", compute_type="float32")
+        logging.info(f"WhisperX model '{model_size}' loaded successfully")
 
     async def transcribe_audio(self, audio_data: bytes) -> str:
         try:
-            config = speech.RecognitionConfig(
-                encoding=speech.RecognitionConfig.AudioEncoding.WEBM_OPUS,
-                sample_rate_hertz=48000,
-                language_code="en-US",
-                alternative_language_codes=["fr-FR"],
-                enable_automatic_punctuation=True,
+            # Save incoming audio as WebM
+            with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as temp_input:
+                temp_input.write(audio_data)
+                temp_input_path = temp_input.name
+
+            # Convert WebM to WAV using FFmpeg
+            temp_output_path = temp_input_path.replace(".webm", ".wav")
+            ffmpeg_command = [
+                "ffmpeg",
+                "-i", temp_input_path,
+                "-ar", "16000",  # Set sample rate to 16kHz
+                "-ac", "1",      # Mono audio
+                "-y",            # Overwrite output file if exists
+                temp_output_path
+            ]
+            process = subprocess.run(
+                ffmpeg_command,
+                check=True,
+                capture_output=True,
+                text=True
             )
-            audio = speech.RecognitionAudio(content=audio_data)
-            response = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: self.client.recognize(config=config, audio=audio)
+            logging.info(f"FFmpeg conversion output: {process.stdout}")
+
+            # Transcribe the WAV file
+            result = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: self.model.transcribe(temp_output_path, language="en")
             )
-            if response.results:
-                return response.results[0].alternatives[0].transcript.strip()
+
+            # Clean up temporary files
+            os.remove(temp_input_path)
+            os.remove(temp_output_path)
+
+            # Log the full result for debugging
+            logging.info(f"WhisperX result: {result}")
+
+            # Check if 'segments' exists (WhisperX typically returns 'segments' and 'language')
+            if "segments" in result and result["segments"]:
+                # Combine text from all segments
+                transcribed_text = " ".join(segment["text"] for segment in result["segments"]).strip()
+                return transcribed_text if transcribed_text else None
+            else:
+                logging.error("No segments found in transcription result")
+                return None
+
+        except subprocess.CalledProcessError as e:
+            logging.error(f"FFmpeg conversion error: {e.stderr}")
             return None
         except Exception as e:
-            logger.error(f"Speech-to-Text Error: {e}")
+            logging.error(f"WhisperX transcription error: {str(e)}")
             return None
 
 class TTSService:
@@ -83,7 +121,7 @@ class QAService:
         self.manager = ConnectionManager()
         self.speech_service = SpeechToTextService()
         self.tts_service = TTSService()
-        api_key = os.getenv("GOOGLE_API_KEY", "AIzaSyC7_NPLgfg9FIZ0MvYQ2sN2TeUj7Y-0cAI")
+        api_key = os.getenv("GOOGLE_API_KEY")
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.authenticated = {}  # Store authenticated WebSocket connections
