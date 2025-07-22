@@ -8,3 +8,4 @@ class Learner(User):
     id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     level = Column(String, nullable=False)
 
+

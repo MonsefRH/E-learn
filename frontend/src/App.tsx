@@ -12,6 +12,7 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import UserManagement from "@/components/management/UserManagement";
 import CourseManagement from "@/components/management/CourseManagement.tsx";
+import CourseList from "@/components/trainer-courses	/CourseList.tsx";
 
 const queryClient = new QueryClient();
 

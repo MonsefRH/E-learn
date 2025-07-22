@@ -9,6 +9,8 @@ import json
 from app.configs.db import get_db
 from app.routers.auth import get_current_user
 from app.models.user import User
+from app.schemas.courseRequest import CourseRequest
+from app.services.content_service import generate_content
 from fastapi.responses import StreamingResponse
 
 
@@ -52,10 +54,12 @@ async def get_slide_html(course_id: str, slide_number: int):
 
 
 
+
+
 @router.get("/api/presentations/{course_id}/audio/{slide_number}")
 async def get_audio(course_id: int, slide_number: int):
     def generate():
-        with open(f"presentations/{course_id}/audios/chatbot{slide_number}.mp3", "rb") as audio_file:
+        with open(f"presentations/{course_id}/audios/audio{slide_number}.mp3", "rb") as audio_file:
             yield from audio_file
 
     return StreamingResponse(
@@ -66,3 +70,13 @@ async def get_audio(course_id: int, slide_number: int):
             "Cache-Control": "public, max-age=3600"
         }
     )
+
+
+
+@router.post("/api/presentations/{course_id}/generate")
+async def generate_course(course_id: int, payload: CourseRequest):
+    try:
+        response = await generate_content(course_id, payload)
+        return {"message": "Content generation started successfully", "response" : response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

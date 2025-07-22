@@ -11,6 +11,8 @@ from google.cloud import texttospeech
 from app.models.course import Course
 from fastapi import WebSocket
 
+from app.services import tts_stt_service
+
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -171,7 +173,7 @@ class QAService:
     async def transcribe_audio(self, audio_file, course_id: str = None):
         try:
             audio_data = await audio_file.read()
-            transcribed_text = await self.speech_service.transcribe_audio(audio_data)
+            transcribed_text = await tts_stt_service.transcribe_audio(audio_data)
             return {"transcribed_text": transcribed_text or "Transcription failed"}
         except Exception as e:
             logger.error(f"Transcription error: {e}")

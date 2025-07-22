@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, MessageCircle } from "lucide-react";
 import {contentService} from "@/lib/services/contentService.ts";
+import {API_URL} from "@/lib/api.ts";
 
 interface Slide {
     id: number;
@@ -41,7 +42,7 @@ const AvatarPresentation = ({ courseId, courseTitle, onComplete }: AvatarPresent
                 setIsLoading(true);
                 console.log('Loading presentation data for course:', courseId);
 
-                const slidesUrl = `http://localhost:8000/slides/api/presentations/${courseId}/slides`;
+                const slidesUrl = `${API_URL}/slides/api/presentations/1/slides`;
                 console.log('Fetching slides from:', slidesUrl);
 
                 const slidesResponse = await fetch(slidesUrl);
@@ -193,7 +194,7 @@ const AvatarPresentation = ({ courseId, courseTitle, onComplete }: AvatarPresent
                 setAudioError(false);
 
                 const slideNumber = currentSlide + 1;
-                const audioUrl = `http://localhost:8000/slides/api/presentations/${courseId}/audio/${slideNumber}`;
+                const audioUrl = `${API_URL}/slides/api/presentations/${courseId}/audio/${slideNumber}`;
                 console.log('Loading chatbot from:', audioUrl);
 
                 // Clean up previous blob URL if it exists
