@@ -25,8 +25,8 @@ const CourseView = () => {
 
   const course = {
     id: courseId,
-    title: "Introduction to Machine Learning",
-    description: "Learn the fundamentals of machine learning with hands-on examples",
+    title: "Introduction to Java",
+    description: "Learn the basics of Java ",
     instructor: "Dr. Sarah Wilson",
     duration: "2 hours",
     totalSlides: 25,

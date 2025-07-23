@@ -1,10 +1,9 @@
-import {Category, Course, Lesson} from "@/models.ts";
-import axios, { AxiosError } from 'axios';
+import { Category, Course, Lesson } from "@/models.ts";
+import axios, { AxiosError } from "axios";
 import api from "@/lib/api";
 
-const formationService= {
-    
-      // Categories
+const formationService = {
+  // Categories
   getCategories: async (): Promise<Category[]> => {
     try {
       const response = await api.get(`/admin/categories/`);
@@ -50,7 +49,6 @@ const formationService= {
     title: string;
     description: string;
     category_id: number;
-    teacher_id?: number;
     deadline?: string;
     is_active: boolean;
   }): Promise<Course> => {
@@ -67,7 +65,6 @@ const formationService= {
       title?: string;
       description?: string;
       category_id?: number;
-      teacher_id?: number;
       deadline?: string;
       is_active?: boolean;
     }
@@ -119,5 +116,6 @@ const formationService= {
       throw new Error("Failed to delete lesson");
     }
   },
-}
-export  default formationService ;
+};
+
+export default formationService;

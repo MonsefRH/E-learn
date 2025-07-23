@@ -3,20 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Plus, Trash2, Edit2, ChevronDown, ChevronRight, Play } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit2, ChevronDown, ChevronRight } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { User, Category, Course, Lesson } from "@/models";
+import { Category, Course, Lesson } from "@/models";
 import formationService from "@/lib/services/formationService";
 import { AxiosError } from "axios";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import FormationDialogs from "@/components/management/FormationDialogs";
-import userService from "@/lib/services/userService.ts";
 
 const CourseManagement = () => {
   const { user, logout, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [users, setUsers] = useState<User[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -28,7 +26,6 @@ const CourseManagement = () => {
     title: "",
     description: "",
     category_id: "",
-    teacher_id: "",
     deadline: "",
     is_active: false,
   });
@@ -103,18 +100,13 @@ const CourseManagement = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [usersData, categoriesData, coursesData, lessonsData] = await Promise.all<
-          [User[], Category[], Course[], Lesson[]]
+        const [categoriesData, coursesData, lessonsData] = await Promise.all<
+          [Category[], Course[], Lesson[]]
         >([
-          userService.getAllUsers().catch((err) => {
-            console.error("userService.getAllUsers error:", err);
-            throw err;
-          }),
           formationService.getCategories(),
           formationService.getCourses(),
           formationService.getLessons(),
         ]);
-        setUsers(usersData);
         setCategories(
           categoriesData.map((cat) => ({
             ...cat,
@@ -252,7 +244,6 @@ const CourseManagement = () => {
         title: newCourse.title,
         description: newCourse.description,
         category_id: Number(newCourse.category_id),
-        teacher_id: newCourse.teacher_id && newCourse.teacher_id !== "none" ? Number(newCourse.teacher_id) : undefined,
         deadline: newCourse.deadline || undefined,
         is_active: newCourse.is_active,
       });
@@ -260,7 +251,6 @@ const CourseManagement = () => {
         title: "",
         description: "",
         category_id: "",
-        teacher_id: "",
         deadline: "",
         is_active: false,
       });
@@ -298,7 +288,6 @@ const CourseManagement = () => {
         title: editCourse.title,
         description: editCourse.description,
         category_id: Number(editCourse.category_id),
-        teacher_id: editCourse.teacher_id && editCourse.teacher_id !== "none" ? Number(editCourse.teacher_id) : undefined,
         deadline: editCourse.deadline || undefined,
         is_active: editCourse.is_active,
       });
@@ -530,12 +519,6 @@ const CourseManagement = () => {
                                         >
                                           <Edit2 className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="outline" size="sm">
-                                          <Play className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="outline" size="sm">
-
-                                        </Button>
                                         <Button
                                           variant="destructive"
                                           size="sm"
@@ -644,12 +627,6 @@ const CourseManagement = () => {
                                                   >
                                                     <Edit2 className="h-4 w-4" />
                                                   </Button>
-                                                  <Button variant="outline" size="sm">
-                                                    <Play className="h-4 w-4" />
-                                                  </Button>
-                                                  <Button variant="outline" size="sm">
-          
-                                                  </Button>
                                                   <Button
                                                     variant="destructive"
                                                     size="sm"
@@ -721,7 +698,7 @@ const CourseManagement = () => {
           editLesson={editLesson}
           setEditLesson={setEditLesson}
           categories={categories}
-          users={users}
+          users={[]}
           handleCreateCategory={handleCreateCategory}
           handleUpdateCategory={handleUpdateCategory}
           handleCreateCourse={handleCreateCourse}

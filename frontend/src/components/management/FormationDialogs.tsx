@@ -31,7 +31,6 @@ interface FormationDialogsProps {
     title: string;
     description: string;
     category_id: string;
-    teacher_id: string;
     deadline: string;
     is_active: boolean;
   };
@@ -40,7 +39,6 @@ interface FormationDialogsProps {
       title: string;
       description: string;
       category_id: string;
-      teacher_id: string;
       deadline: string;
       is_active: boolean;
     }>
@@ -232,7 +230,6 @@ const FormationDialogs: React.FC<FormationDialogsProps> = ({
               title: "",
               description: "",
               category_id: "",
-              teacher_id: "",
               deadline: "",
               is_active: false,
             });
@@ -266,24 +263,6 @@ const FormationDialogs: React.FC<FormationDialogsProps> = ({
                     {category.name}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-            <Select
-              onValueChange={(value) => setNewCourse({ ...newCourse, teacher_id: value })}
-              value={newCourse.teacher_id}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Teacher (Optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {users
-                  .filter((u) => u.role === "trainer")
-                  .map((user) => (
-                    <SelectItem key={user.id} value={String(user.id)}>
-                      {user.username}
-                    </SelectItem>
-                  ))}
               </SelectContent>
             </Select>
             <Input
@@ -365,29 +344,6 @@ const FormationDialogs: React.FC<FormationDialogsProps> = ({
                         {category.name}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  onValueChange={(value) =>
-                    setEditCourse({
-                      ...editCourse,
-                      teacher_id: value !== "none" ? Number(value) : undefined,
-                    })
-                  }
-                  value={editCourse.teacher_id ? String(editCourse.teacher_id) : "none"}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Teacher (Optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {users
-                      .filter((u) => u.role === "trainer")
-                      .map((user) => (
-                        <SelectItem key={user.id} value={String(user.id)}>
-                          {user.username}
-                        </SelectItem>
-                      ))}
                   </SelectContent>
                 </Select>
                 <Input

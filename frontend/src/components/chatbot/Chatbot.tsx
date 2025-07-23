@@ -103,6 +103,7 @@ export const Chatbot = ({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [textInput, setTextInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
@@ -114,12 +115,16 @@ export const Chatbot = ({
       qaService.connect(courseId, (data) => {
         console.log("Received response:", data);
         if (data.type === "transcription_ready") {
-          setTextInput(data.transcribed_text || "Transcription failed");
-          setMessages((prev) => [
-            ...prev,
-            { text: data.transcribed_text || "Transcription failed", sender: "user", timestamp: new Date().toLocaleTimeString() },
-          ]);
-          toast({ title: "Transcription Received", description: `Your question: ${data.transcribed_text}` });
+          if (data.transcribed_text && data.transcribed_text !== "Transcription failed") {
+            setTextInput(data.transcribed_text);
+            setMessages((prev) => [
+              ...prev,
+              { text: data.transcribed_text, sender: "user", timestamp: new Date().toLocaleTimeString() },
+            ]);
+            toast({ title: "Transcription Received", description: `Your question: ${data.transcribed_text}` });
+          } else {
+            toast({ title: "Error", description: "Failed to transcribe audio", variant: "destructive" });
+          }
         } else if (data.type === "text_response") {
           setMessages((prev) => [
             ...prev,
@@ -154,14 +159,13 @@ export const Chatbot = ({
         audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 },
       });
 
-      // Check supported MIME types and fall back if necessary
       const supportedTypes = [
         "audio/webm;codecs=opus",
         "audio/webm",
         "audio/ogg;codecs=opus",
         "audio/mp4",
       ];
-      let mimeType = supportedTypes.find(type => MediaRecorder.isTypeSupported(type)) || "audio/webm";
+      let mimeType = supportedTypes.find((type) => MediaRecorder.isTypeSupported(type)) || "audio/webm";
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
@@ -200,29 +204,45 @@ export const Chatbot = ({
     }
   }, [isRecording, toast]);
 
+  const clearRecording = useCallback(() => {
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    setAudioBlob(null);
+    setAudioUrl(null);
+    setIsDialogOpen(false); // Close dialog when clearing recording
+  }, [audioUrl]);
+
   const submitAudio = useCallback(async () => {
-    if (!audioBlob) return;
+    if (!audioBlob) {
+      toast({ title: "Error", description: "No audio recorded", variant: "destructive" });
+      setIsDialogOpen(false);
+      return;
+    }
+
+    if (audioBlob.size < 1000) {
+      toast({ title: "Error", description: "Audio file is too small", variant: "destructive" });
+      clearRecording();
+      return;
+    }
 
     try {
       const transcribedText = await qaService.transcribeAudio(audioBlob, courseId);
-      if (transcribedText) {
+      if (transcribedText && transcribedText !== "Transcription failed") {
         setTextInput(transcribedText);
         toast({ title: "Transcription Received", description: `Your question: ${transcribedText}` });
       } else {
-        setTextInput("Transcription failed");
         toast({ title: "Error", description: "Failed to transcribe audio", variant: "destructive" });
       }
       clearRecording();
     } catch (error) {
       console.error("Error submitting audio:", error);
-      setTextInput("Transcription failed");
       toast({
         title: "Submission Failed",
         description: "Unable to process audio. Please try again.",
         variant: "destructive",
       });
+      clearRecording();
     }
-  }, [audioBlob, toast, courseId]);
+  }, [audioBlob, toast, courseId, clearRecording]);
 
   const submitText = useCallback(async () => {
     if (!textInput.trim()) {
@@ -251,12 +271,6 @@ export const Chatbot = ({
       });
     }
   }, [textInput, toast, courseId]);
-
-  const clearRecording = useCallback(() => {
-    if (audioUrl) URL.revokeObjectURL(audioUrl);
-    setAudioBlob(null);
-    setAudioUrl(null);
-  }, [audioUrl]);
 
   const sizeClasses = {
     sm: "w-full max-w-sm",
@@ -287,9 +301,7 @@ export const Chatbot = ({
               >
                 <div
                   className={`p-3 rounded-lg max-w-[80%] border border-gray-200 ${
-                    msg.sender === "user"
-                      ? "bg-blue-500 text-white"
-                      : "bg-white text-gray-800 shadow-sm"
+                    msg.sender === "user" ? "bg-blue-500 text-white" : "bg-white text-gray-800 shadow-sm"
                   }`}
                 >
                   <span className="text-xs opacity-70 block mb-1">{msg.timestamp}</span>
@@ -314,7 +326,7 @@ export const Chatbot = ({
           <Button onClick={submitText} disabled={!textInput.trim()}>
             <Send className="h-4 w-4" />
           </Button>
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button
                 size="icon"
@@ -401,9 +413,7 @@ export const Chatbot = ({
             >
               <div
                 className={`p-3 rounded-lg max-w-[80%] border border-gray-200 ${
-                  msg.sender === "user"
-                    ? "bg-blue-500 text-white"
-                    : "bg-white text-gray-800 shadow-sm"
+                  msg.sender === "user" ? "bg-blue-500 text-white" : "bg-white text-gray-800 shadow-sm"
                 }`}
               >
                 <span className="text-xs opacity-70 block mb-1">{msg.timestamp}</span>
@@ -423,11 +433,12 @@ export const Chatbot = ({
           onChange={(e) => setTextInput(e.target.value)}
           placeholder="Type your message or transcribe audio..."
           className="flex-1"
+          onKeyPress={(e) => e.key === "Enter" && submitText()}
         />
         <Button onClick={submitText} disabled={!textInput.trim()}>
           <Send className="h-4 w-4" />
         </Button>
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button
               size="icon"
@@ -456,38 +467,38 @@ export const Chatbot = ({
                     onClick={stopRecording}
                     size="lg"
                     className="rounded-full w-16 h-16 bg-gray-500 hover:bg-gray-600 animate-pulse"
-                  >
-                    <MicOff className="h-6 w-6" />
-                  </Button>
-                )}
-              </div>
-              <div className="text-center text-sm text-muted-foreground">
-                {isRecording ? (
-                  <span className="text-red-500 font-medium">Recording... Click to stop</span>
-                ) : audioBlob ? (
-                  "Recording ready to send"
-                ) : (
-                  "Click the microphone to start recording"
-                )}
-              </div>
-              {audioBlob && audioUrl && (
-                <div className="space-y-3">
-                  <audio controls src={audioUrl} className="w-full" preload="metadata" />
-                  <div className="flex gap-2 justify-center">
-                    <Button onClick={submitAudio} className="flex-1">
-                      <Send className="h-4 w-4 mr-2" />
-                      Send Question
+                    >
+                      <MicOff className="h-6 w-6" />
                     </Button>
-                    <Button onClick={clearRecording} variant="outline" size="icon">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </Card>
-  );
-};
+                <div className="text-center text-sm text-muted-foreground">
+                  {isRecording ? (
+                    <span className="text-red-500 font-medium">Recording... Click to stop</span>
+                  ) : audioBlob ? (
+                    "Recording ready to send"
+                  ) : (
+                    "Click the microphone to start recording"
+                  )}
+                </div>
+                {audioBlob && audioUrl && (
+                  <div className="space-y-3">
+                    <audio controls src={audioUrl} className="w-full" preload="metadata" />
+                    <div className="flex gap-2 justify-center">
+                      <Button onClick={submitAudio} className="flex-1">
+                        <Send className="h-4 w-4 mr-2" />
+                        Send Question
+                      </Button>
+                      <Button onClick={clearRecording} variant="outline" size="icon">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </Card>
+    );
+  };
