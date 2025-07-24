@@ -10,7 +10,7 @@ import formationService from "@/lib/services/formationService";
 import { AxiosError } from "axios";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import FormationDialogs from "@/components/management/FormationDialogs";
+import FormationDialogs from "@/components/dialogs/FormationDialogs.tsx";
 
 const CourseManagement = () => {
   const { user, logout, isLoading: authLoading } = useAuth();
