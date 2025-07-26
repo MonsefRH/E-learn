@@ -22,7 +22,7 @@ def create_new_course(course: CourseCreate, db: Session = Depends(get_db), _=Dep
     return create_course(db, course)
 
 @router.get("/", response_model=List[CourseResponse])
-def list_courses(db: Session = Depends(get_db), _=Depends(ensure_admin)):
+def list_courses(db: Session = Depends(get_db)):
     return db.query(Course).all()
 
 @router.get("/{course_id}", response_model=CourseResponse)

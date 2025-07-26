@@ -49,6 +49,17 @@ def update_session(db: Session, session_id: int, session_update: SessionUpdate) 
             if not group:
                 raise HTTPException(status_code=400, detail=f"Group with ID {group_id} not found")
     update_data = session_update.dict(exclude_unset=True)
+    # Retain existing values if not provided in update
+    if 'level' not in update_data and db_session.level:
+        update_data['level'] = db_session.level
+    if 'topic' not in update_data and db_session.topic:
+        update_data['topic'] = db_session.topic
+    if 'axes' not in update_data and db_session.axes:
+        update_data['axes'] = db_session.axes
+    if 'content_generated' not in update_data:
+        update_data['content_generated'] = db_session.content_generated
+    if 'language' not in update_data and db_session.language:
+        update_data['language'] = db_session.language
     for key, value in update_data.items():
         setattr(db_session, key, value)
     db.commit()

@@ -21,7 +21,7 @@ def create_new_category(category: CategoryCreate, db: Session = Depends(get_db),
     return create_category(db, category)
 
 @router.get("/", response_model=List[CategoryResponse])
-def list_categories(db: Session = Depends(get_db), _=Depends(ensure_admin)):
+def list_categories(db: Session = Depends(get_db)):
     return db.query(Category).all()
 
 @router.get("/{category_id}", response_model=CategoryResponse)

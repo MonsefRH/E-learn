@@ -19,7 +19,7 @@ def create_new_group(group: GroupCreate, db: Session = Depends(get_db), _=Depend
     return create_group(db, group)
 
 @router.get("/", response_model=List[GroupResponse])
-def list_groups(db: Session = Depends(get_db), _=Depends(ensure_admin)):
+def list_groups(db: Session = Depends(get_db)):
     return get_groups(db)
 
 @router.get("/{group_id}", response_model=GroupResponse)
