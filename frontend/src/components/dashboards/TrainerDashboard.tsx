@@ -4,34 +4,34 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { BookOpen, Plus, Users, Video, Edit, Eye, BarChart3 } from "lucide-react";
+import { BookOpen, Plus, Users, Video, Edit, Eye, BarChart3, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const TrainerDashboard = () => {
   const navigate = useNavigate();
-  
+
   const [myCourses] = useState([
-    { 
-      id: 1, 
-      title: "Introduction to Machine Learning", 
-      enrollments: 45, 
-      modules: 8, 
+    {
+      id: 1,
+      title: "Introduction to Machine Learning",
+      enrollments: 45,
+      modules: 8,
       status: "published",
       completionRate: 78
     },
-    { 
-      id: 2, 
-      title: "Python Programming Basics", 
-      enrollments: 32, 
-      modules: 6, 
+    {
+      id: 2,
+      title: "Python Programming Basics",
+      enrollments: 32,
+      modules: 6,
       status: "draft",
       completionRate: 0
     },
-    { 
-      id: 3, 
-      title: "Data Visualization", 
-      enrollments: 28, 
-      modules: 5, 
+    {
+      id: 3,
+      title: "Data Visualization",
+      enrollments: 28,
+      modules: 5,
       status: "published",
       completionRate: 65
     },
@@ -44,7 +44,7 @@ const TrainerDashboard = () => {
   ]);
 
   return (
-    <DashboardLayout 
+    <DashboardLayout
       title="Trainer Dashboard"
       breadcrumbs={[{ label: "Dashboard" }]}
     >
@@ -62,7 +62,7 @@ const TrainerDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -76,7 +76,7 @@ const TrainerDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -90,7 +90,7 @@ const TrainerDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -106,26 +106,24 @@ const TrainerDashboard = () => {
           </Card>
         </div>
 
-
-
-        <Tabs defaultValue="courses" className="space-y-4">
+        <Tabs defaultValue="sessions" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="courses">My Courses</TabsTrigger>
+            <TabsTrigger value="sessions">My Sessions</TabsTrigger>
             <TabsTrigger value="content">Content Library</TabsTrigger>
             <TabsTrigger value="analytics">Student Analytics</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="courses" className="space-y-4">
+
+          <TabsContent value="sessions" className="space-y-4">
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>My Courses</CardTitle>
-                    <CardDescription>Manage your course content and track student progress</CardDescription>
+                    <CardTitle>My Sessions</CardTitle>
+                    <CardDescription>Manage and prepare your teaching sessions</CardDescription>
                   </div>
-                  <Button onClick={() => navigate('/course/new/edit')}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Course
+                  <Button onClick={() => navigate('/sessions')}>
+                    <Play className="mr-2 h-4 w-4" />
+                    View Sessions
                   </Button>
                 </div>
               </CardHeader>
@@ -141,14 +139,14 @@ const TrainerDashboard = () => {
                               {course.modules} modules • {course.enrollments} students
                             </p>
                           </div>
-                          <Badge 
+                          <Badge
                             variant={course.status === "published" ? "default" : "secondary"}
                             className={course.status === "published" ? "bg-green-100 text-green-800" : ""}
                           >
                             {course.status}
                           </Badge>
                         </div>
-                        
+
                         {course.status === "published" && (
                           <div className="mb-4">
                             <div className="flex justify-between text-sm mb-1">
@@ -156,24 +154,24 @@ const TrainerDashboard = () => {
                               <span className="font-medium">{course.completionRate}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300" 
+                              <div
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${course.completionRate}%` }}
                               ></div>
                             </div>
                           </div>
                         )}
-                        
+
                         <div className="flex space-x-2">
-                          <Button 
+                          <Button
                             size="sm"
                             onClick={() => navigate(`/course/${course.id}/edit`)}
                           >
                             <Edit className="h-3 w-3 mr-1" />
                             Edit
                           </Button>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => navigate(`/course/${course.id}`)}
                           >
@@ -192,7 +190,7 @@ const TrainerDashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="content" className="space-y-4">
             <Card>
               <CardHeader>
@@ -207,14 +205,14 @@ const TrainerDashboard = () => {
                       <span className="text-sm text-muted-foreground">Upload Video</span>
                     </CardContent>
                   </Card>
-                  
+
                   <Card className="border-dashed border-2 border-gray-300 hover:border-primary transition-colors cursor-pointer">
                     <CardContent className="flex flex-col items-center justify-center h-32 space-y-2">
                       <Plus className="h-8 w-8 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">Upload PDF</span>
                     </CardContent>
                   </Card>
-                  
+
                   <Card className="border-dashed border-2 border-gray-300 hover:border-primary transition-colors cursor-pointer">
                     <CardContent className="flex flex-col items-center justify-center h-32 space-y-2">
                       <Plus className="h-8 w-8 text-muted-foreground" />
@@ -225,7 +223,7 @@ const TrainerDashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="analytics" className="space-y-4">
             <Card>
               <CardHeader>

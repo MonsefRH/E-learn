@@ -41,5 +41,3 @@ async def transcribe_audio(audio_data: bytes) -> str:
     except Exception as e:
         logger.error(f"Speech-to-Text Error: {e}")
         return None
-
-

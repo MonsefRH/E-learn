@@ -14,6 +14,11 @@ class SessionBase(BaseModel):
     group_ids: List[int] = Field(..., description="List of Group IDs")
     start_date: date = Field(..., description="Start date of the session")
     status: SessionStatus = Field(default=SessionStatus.PENDING, description="Session status")
+    level: Optional[str] = Field(None, description="Level of the course (e.g., beginner, intermediate, advanced)")
+    topic: Optional[str] = Field(None, description="Topic of the session (e.g., Java)")
+    axes: Optional[List[str]] = Field(None, description="List of axes/topics covered")
+    content_generated: Optional[bool] = Field(False, description="Indicates if content is generated")
+    language: Optional[str] = Field(default="en", description="Language of the session (en, fr, es, it)")
 
     @field_validator('course_id', 'teacher_id', mode='before')
     @classmethod
@@ -35,6 +40,14 @@ class SessionBase(BaseModel):
         except (ValueError, TypeError):
             raise ValueError(f"Invalid integer list for group_ids: {v}")
 
+    @field_validator('language', mode='before')
+    @classmethod
+    def validate_language(cls, v):
+        valid_languages = {"en", "fr", "es", "it"}
+        if v not in valid_languages:
+            raise ValueError(f"Language must be one of: {', '.join(valid_languages)}")
+        return v
+
 class SessionCreate(SessionBase):
     pass
 
@@ -44,13 +57,17 @@ class SessionUpdate(BaseModel):
     group_ids: Optional[List[int]] = None
     start_date: Optional[date] = None
     status: Optional[SessionStatus] = None
+    level: Optional[str] = None
+    topic: Optional[str] = None
+    axes: Optional[List[str]] = None
+    content_generated: Optional[bool] = None
+    language: Optional[str] = None
 
 class SessionResponse(SessionBase):
     id: int
 
     @classmethod
     def from_orm(cls, obj):
-        # Convert the enum to its string value for validation
         data = obj.__dict__.copy()
         if 'status' in data and isinstance(data['status'], Enum):
             data['status'] = data['status'].value
