@@ -8,24 +8,31 @@ from app.services.tts_stt_service import generate_audio
 from app.schemas.courseRequest import CourseRequest
 
 
-async def receive_content(payload : CourseRequest):
-    print(f"Receiving content with payload: {payload}")
+#async def receive_content(payload : CourseRequest):
+#    print(f"Receiving content with payload: {payload}")
+#    async with httpx.AsyncClient() as client:
+#        print("Sending request to upload/generate endpoint")
+#        response = await client.post("http://localhost:8000/upload/generate", json=payload.dict())
+#        print(f"Response status: {response.status_code}")
+#        return response.json()
+
+async def send_content(payload: CourseRequest,course_id: int):
+    print(f"Initiating content generation with payload: {payload}")
     async with httpx.AsyncClient() as client:
-        print("Sending request to upload/generate endpoint")
-        response = await client.post("http://localhost:8000/upload/generate", json=payload.dict())
-        print(f"Response status: {response.status_code}")
+        print("Sending initial request to start generation")
+        response = await client.post(f"http://localhost:8000/generate/{course_id}", json=payload.dict())
+        print(f"Initial response status: {response.status_code}")
         return response.json()
 
 
 
-async def generate_content(course_id, payload : CourseRequest):
+
+async def generate_content(course_id: int,language, response):
     print(f"Generating content for course_id: {course_id}")
     course_path = Path(f"presentations/{course_id}")
     course_path.mkdir(parents=True, exist_ok=True)
     print(f"Created directory: {course_path}")
 
-    print("Calling receive_content...")
-    response = await receive_content(payload)
     print(f"Received content response: {response}")
 
     print("Generating slides...")
@@ -33,7 +40,7 @@ async def generate_content(course_id, payload : CourseRequest):
     print(f"Generated slides: {slides}")
 
     print("Creating audio...")
-    audio_files = await create_audio(response.get('speech', {}), payload.language, str(course_path / "audios"))
+    audio_files = await create_audio(response.get('speech', {}), language, str(course_path / "audios"))
     print(f"Created audio files: {audio_files}")
 
     return {
