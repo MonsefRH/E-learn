@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.params import Path
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi.params import Path, File, Body
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 from typing import List
@@ -12,11 +12,8 @@ from app.schemas.courseRequest import CourseRequest
 from app.services.content_service import generate_content
 from fastapi.responses import StreamingResponse
 
-<<<<<<< HEAD
-from backend.app.services.content_service import send_content
+from app.services.content_service import send_content
 
-=======
->>>>>>> 899fdcbf14b6b73a6c6b4130d318804e30cd6d5d
 router = APIRouter(prefix="/slides", tags=["slides"])
 
 @router.get("/api/presentations/{session_id}/slides")
@@ -61,7 +58,6 @@ async def get_audio(session_id: int, slide_number: int):
         }
     )
 
-<<<<<<< HEAD
 
 
 @router.post("/api/presentations/{course_id}/generate/start")
@@ -74,14 +70,13 @@ async def send_to_model(course_id: int, payload: CourseRequest):
 
 
 @router.post("/api/presentations/generate/receive/{course_id}/{language}")
-async def receive_from_model(course_id: int, language: str, response: str):
+async def receive_from_model(course_id: int, language: str, response : dict = Body(...)):
     try:
         response = await generate_content(course_id , language, response)
         return {"message": "Content generation completed successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-=======
 @router.post("/api/presentations/{session_id}/generate")
 async def generate_course(session_id: int, payload: CourseRequest):
     try:
@@ -89,4 +84,3 @@ async def generate_course(session_id: int, payload: CourseRequest):
         return {"message": "Content generation started successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
->>>>>>> 899fdcbf14b6b73a6c6b4130d318804e30cd6d5d
