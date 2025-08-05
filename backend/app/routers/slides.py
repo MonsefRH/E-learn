@@ -12,11 +12,8 @@ from app.schemas.courseRequest import CourseRequest
 from app.services.content_service import generate_content
 from fastapi.responses import StreamingResponse
 
-<<<<<<< HEAD
-from backend.app.services.content_service import send_content
+from app.services.content_service import send_content
 
-=======
->>>>>>> 899fdcbf14b6b73a6c6b4130d318804e30cd6d5d
 router = APIRouter(prefix="/slides", tags=["slides"])
 
 @router.get("/api/presentations/{session_id}/slides")
@@ -61,8 +58,6 @@ async def get_audio(session_id: int, slide_number: int):
         }
     )
 
-<<<<<<< HEAD
-
 
 @router.post("/api/presentations/{course_id}/generate/start")
 async def send_to_model(course_id: int, payload: CourseRequest):
@@ -81,7 +76,6 @@ async def receive_from_model(course_id: int, language: str, response: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-=======
 @router.post("/api/presentations/{session_id}/generate")
 async def generate_course(session_id: int, payload: CourseRequest):
     try:
@@ -89,4 +83,3 @@ async def generate_course(session_id: int, payload: CourseRequest):
         return {"message": "Content generation started successfully", "response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
->>>>>>> 899fdcbf14b6b73a6c6b4130d318804e30cd6d5d

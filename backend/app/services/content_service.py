@@ -1,10 +1,9 @@
 import json
-import os
 from pathlib import Path
-
+import edge_tts
+import os
 import httpx
 
-from app.services.tts_stt_service import generate_audio
 from app.schemas.courseRequest import CourseRequest
 
 
@@ -105,6 +104,17 @@ async def create_audio(speech, language, path: str):
         })
 
     return generated_files
+
+async def generate_audio(speech_text: str, file_name: str, file_path: str, voice: str = "en-US-AriaNeural"):
+    os.makedirs(file_path, exist_ok=True)
+
+    full_path = os.path.join(file_path, file_name)
+
+    communicate = edge_tts.Communicate(speech_text, voice)
+
+    await communicate.save(full_path)
+
+    return full_path
 
 
 async def generate_slides(slides, path: str):

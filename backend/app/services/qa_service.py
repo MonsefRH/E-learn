@@ -51,9 +51,9 @@ class SpeechToTextService:
             ffmpeg_command = [
                 "ffmpeg",
                 "-i", temp_input_path,
-                "-ar", "16000",  # Set sample rate to 16kHz
-                "-ac", "1",      # Mono audio
-                "-y",            # Overwrite output file if exists
+                "-ar", "16000",
+                "-ac", "1",
+                "-y",
                 temp_output_path
             ]
             process = subprocess.run(
@@ -121,18 +121,6 @@ class QAService:
                 "text": text_response,
             })
 
-            # audio_base64 = await self.tts_service.synthesize_text_to_base64(text_response)
-            # if audio_base64:
-            #     await self.manager.send_response(websocket, {
-            #         "type": "audio_ready",
-            #         "audio_data": audio_base64,
-            #         "audio_format": "mp3",
-            #     })
-
-            # await self.manager.send_response(websocket, {
-            #     "type": "animation_ready",
-            #     "text": text_response,
-            # })
         except Exception as e:
             logger.error(f"Error processing question: {e}")
             await self.manager.send_response(websocket, {
