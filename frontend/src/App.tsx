@@ -12,7 +12,7 @@ import NotFound from "./pages/NotFound";
 import UserManagement from "@/components/management/UserManagement";
 import CourseManagement from "@/components/management/CourseManagement.tsx";
 import SessionManagement from "@/components/management/SessionManagement";
-import TrainerSessionManagement from "@/components/management/TrainerSessionManagement"; // New import
+import TrainerSessionManagement from "@/components/management/TrainerSessionManagement"; // Existing import
 
 const queryClient = new QueryClient();
 
@@ -73,7 +73,15 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/course/:courseId" element={<CourseView />} />
+            <Route
+              path="/presentation/:id"
+              element={
+                <ProtectedRoute allowedRoles={["trainer"]}>
+                  <TrainerSessionManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/mysession/:courseId" element={<CourseView />} />
             <Route path="/course/:courseId/edit" element={<CourseEditor />} />
             <Route path="/course/new/edit" element={<CourseEditor />} />
             <Route path="/settings" element={<Settings />} />

@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.params import Path
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi.params import Path, File, Body
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy.orm import Session
 from typing import List
@@ -59,6 +59,7 @@ async def get_audio(session_id: int, slide_number: int):
     )
 
 
+
 @router.post("/api/presentations/{course_id}/generate/start")
 async def send_to_model(course_id: int, payload: CourseRequest):
     try:
@@ -69,7 +70,7 @@ async def send_to_model(course_id: int, payload: CourseRequest):
 
 
 @router.post("/api/presentations/generate/receive/{course_id}/{language}")
-async def receive_from_model(course_id: int, language: str, response: str):
+async def receive_from_model(course_id: int, language: str, response : dict = Body(...)):
     try:
         response = await generate_content(course_id , language, response)
         return {"message": "Content generation completed successfully", "response": response}

@@ -1,8 +1,12 @@
 import json
 from pathlib import Path
+import subprocess
 import edge_tts
 import os
 import httpx
+from selenium import webdriver
+from PIL import Image
+import time
 
 from app.schemas.courseRequest import CourseRequest
 
@@ -19,7 +23,7 @@ async def send_content(payload: CourseRequest,course_id: int):
     print(f"Initiating content generation with payload: {payload}")
     async with httpx.AsyncClient() as client:
         print("Sending initial request to start generation")
-        response = await client.post(f"http://localhost:8000/generate/{course_id}", json=payload.dict())
+        response = await client.post(f"http://localhost:8001/generate/{course_id}", json=payload.dict())
         print(f"Initial response status: {response.status_code}")
         return response.json()
 
@@ -45,6 +49,10 @@ async def generate_content(course_id: int,language, response):
     audio_files = await create_audio(response.get('speech', {}), language, str(course_path / "audios"))
 
     print(f"Created audio files: {audio_files}")
+
+    count = count_slides(slides)
+
+    generate_video(count,course_id)
 
     return {
         "slides": slides,
@@ -154,6 +162,12 @@ async def generate_slides(slides, path: str):
 
     print(f"Returning {len(generated_files)} generated files")
     return generated_files
+
+def count_slides(slides):
+    count =0
+    for slide in slides :
+        count=count+1
+    return count
 
 
 def generate_html_slide(slide_data):
@@ -464,3 +478,144 @@ def generate_html_slide(slide_data):
 </body>
 </html>"""
     return html_template
+
+
+def capture_slide(html_path: str, output_png: str):
+    """Capture une slide HTML en image PNG"""
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--window-size=1920,1080')  # Dimensions paires standard
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-software-rasterizer')  # Éviter les erreurs GPU
+    options.add_argument('--disable-background-timer-throttling')
+    options.add_argument('--disable-renderer-backgrounding')
+    options.add_argument('--disable-backgrounding-occluded-windows')
+
+    driver = None
+    try:
+        driver = webdriver.Chrome(options=options)
+        # Utiliser un chemin absolu pour éviter les problèmes
+        abs_path = os.path.abspath(html_path)
+        driver.get(f"file://{abs_path}")
+        time.sleep(3)  # Augmenter le délai pour permettre le chargement complet
+
+        # S'assurer que la fenêtre a la bonne taille
+        driver.set_window_size(1920, 1080)
+        time.sleep(1)  # Petit délai supplémentaire après le redimensionnement
+
+        driver.save_screenshot(output_png)
+        print(f"Screenshot saved: {output_png}")
+    except Exception as e:
+        print(f"Error capturing slide {html_path}: {e}")
+        raise
+    finally:
+        if driver:
+            driver.quit()
+
+
+def create_video_from_image_audio(image: str, audio: str, output: str):
+    """Crée une vidéo à partir d'une image et d'un fichier audio"""
+    try:
+        # Utiliser des filtres vidéo pour s'assurer que les dimensions sont paires
+        # et réduire le bitrate audio pour éviter les erreurs AAC
+        cmd = [
+            'ffmpeg', '-y', '-loop', '1', '-i', image, '-i', audio,
+            '-c:v', 'libx264', '-tune', 'stillimage', '-c:a', 'aac', '-b:a', '128k',
+            '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',  # Force des dimensions paires
+            '-pix_fmt', 'yuv420p', '-shortest', output
+        ]
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        print(f"Video created: {output}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error creating video {output}: {e}")
+        print(f"FFmpeg stderr: {e.stderr}")
+        raise
+
+
+def concat_videos(video_list: list, output_file: str):
+    """Concatène plusieurs vidéos en une seule"""
+    try:
+        # Créer le fichier de liste dans le même répertoire que la sortie
+        output_dir = os.path.dirname(output_file)
+        videos_txt = os.path.join(output_dir, 'videos.txt')
+
+        with open(videos_txt, 'w') as f:
+            for video in video_list:
+                # Utiliser des chemins absolus pour éviter les problèmes
+                abs_video_path = os.path.abspath(video)
+                f.write(f"file '{abs_video_path}'\n")
+
+        cmd = ['ffmpeg', '-y', '-f', 'concat', '-safe', '0', '-i', videos_txt, '-c', 'copy', output_file]
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        print(f"Final video created: {output_file}")
+
+        # Nettoyer le fichier temporaire
+        os.remove(videos_txt)
+    except subprocess.CalledProcessError as e:
+        print(f"Error concatenating videos: {e}")
+        print(f"FFmpeg stderr: {e.stderr}")
+        raise
+
+
+def generate_video(nbr_slides, course_id: int):
+    print('debut')
+    slides_dir = f'presentations/{course_id}/slides'
+    audio_dir = f'presentations/{course_id}/audios'
+    output_dir = f'presentations/{course_id}'
+
+
+    # Vérifier que les répertoires existent
+    if not os.path.exists(slides_dir):
+        raise FileNotFoundError(f"Slides directory not found: {slides_dir}")
+    if not os.path.exists(audio_dir):
+        raise FileNotFoundError(f"Audio directory not found: {audio_dir}")
+
+    videos = []
+
+    try:
+        for i in range(1, int(nbr_slides) + 1):  # Correction: inclure la dernière slide
+            html = f"{slides_dir}/slide{i}.html"
+            image = f"{output_dir}/slide{i}.png"
+            audio = f"{audio_dir}/audio{i}.mp3"
+            video = f"{output_dir}/slide{i}.mp4"
+
+            # Vérifier que les fichiers existent
+            if not os.path.exists(html):
+                print(f"Warning: HTML file not found: {html}")
+                continue
+            if not os.path.exists(audio):
+                print(f"Warning: Audio file not found: {audio}")
+                continue
+
+            print(f"Processing slide {i}...")
+            capture_slide(html, image)
+            create_video_from_image_audio(image, audio, video)
+            videos.append(video)
+
+            # Nettoyer l'image temporaire
+            if os.path.exists(image):
+                os.remove(image)
+
+        if not videos:
+            raise ValueError("No videos were generated")
+
+        # Créer la vidéo finale
+        final_video = f"{output_dir}/{course_id}.mp4"
+        concat_videos(videos, final_video)
+
+        # Nettoyer les vidéos intermédiaires
+        for v in videos:
+            if os.path.exists(v):
+                os.remove(v)
+
+        print(f"Course video generated successfully: {final_video}")
+        return final_video
+
+    except Exception as e:
+        # Nettoyer en cas d'erreur
+        for v in videos:
+            if os.path.exists(v):
+                os.remove(v)
+        raise e

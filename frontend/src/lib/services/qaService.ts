@@ -30,19 +30,19 @@ class QAService {
     this.token = localStorage.getItem("token"); // Use dummy token for testing
     console.log("QAService initialized with token:", this.token ? this.token.substring(0, 10) + "..." : "none");
     api.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          this.token = null;
-          this.isAuthenticated = false;
-          localStorage.removeItem("token");
-          console.log("Token invalidated due to 401");
-          if (this.ws) {
-            this.ws.close(); // Close WebSocket on invalidation
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            this.token = null;
+            this.isAuthenticated = false;
+            localStorage.removeItem("token");
+            console.log("Token invalidated due to 401");
+            if (this.ws) {
+              this.ws.close(); // Close WebSocket on invalidation
+            }
           }
+          return Promise.reject(error);
         }
-        return Promise.reject(error);
-      }
     );
   }
 
@@ -59,11 +59,19 @@ class QAService {
     this.ws.onopen = () => {
       console.log("WebSocket connected");
       if (this.token) {
-        this.sendMessage({ type: "auth", token: this.token });
+        this.sendMessage({type: "auth", token: this.token, course_id: courseId});
         console.log("Sent auth message with token");
       } else {
         console.log("No token available for authentication");
-        this.isConnecting = false; // Allow connection to proceed without auth for testing
+        this.isConnecting = false;
+        // Notify about authentication issue
+        if (this.onMessageCallback) {
+          this.onMessageCallback({
+            type: "error",
+            message: "Authentication required. Please log in first."
+          });
+        }
+        this.ws?.close();
       }
     };
 
@@ -74,6 +82,15 @@ class QAService {
         this.isAuthenticated = true;
         this.isConnecting = false;
         console.log("Authentication successful");
+      } else if (data.type === "error" && data.message?.includes("Authentication required")) {
+        console.error("Authentication failed:", data.message);
+        this.isAuthenticated = false;
+        this.token = null;
+        localStorage.removeItem("token");
+        if (this.onMessageCallback) {
+          this.onMessageCallback(data);
+        }
+        this.ws?.close();
       } else if (this.onMessageCallback) {
         this.onMessageCallback(data);
       }
@@ -87,7 +104,6 @@ class QAService {
     this.ws.onclose = () => {
       console.log("WebSocket closed");
       this.ws = null;
-      this.isAuthenticated = false;
       this.isConnecting = false;
     };
   }
@@ -95,44 +111,74 @@ class QAService {
   async sendMessage(message: QAMessage): Promise<void> {
     if (!this.ws) {
       console.log("WebSocket not initialized, connecting...");
-      this.connect();
+      this.connect(message.course_id);
     }
+
     if (this.ws?.readyState === WebSocket.CONNECTING) {
       console.log("Waiting for WebSocket to connect...");
-      await new Promise((resolve) => {
+      await new Promise<void>((resolve, reject) => {
         const checkConnection = setInterval(() => {
           if (this.ws?.readyState === WebSocket.OPEN) {
             clearInterval(checkConnection);
-            resolve(null);
+            resolve();
+          } else if (this.ws?.readyState === WebSocket.CLOSED || this.ws?.readyState === WebSocket.CLOSING) {
+            clearInterval(checkConnection);
+            reject(new Error("WebSocket connection failed"));
           }
         }, 100);
+
+        // Set a timeout to avoid infinite waiting
+        setTimeout(() => {
+          clearInterval(checkConnection);
+          reject(new Error("WebSocket connection timeout"));
+        }, 5000);
+      }).catch((error) => {
+        throw error;
       });
     }
+
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       console.error("WebSocket not connected, message not sent:", message);
       throw new Error("WebSocket not connected");
     }
-    if ((message.type === "text_question" && !message.question) || (message.type === "voice_question" && !message.audio_data)) {
+
+    // Don't send messages that require authentication if not authenticated
+    if (!this.isAuthenticated && message.type !== "auth") {
+      console.error("Not authenticated, message not sent:", message);
+      throw new Error("Not authenticated");
+    }
+
+    if ((message.type === "text_question" && !message.question) ||
+        (message.type === "voice_question" && !message.audio_data)) {
       console.error("Message content cannot be empty, message not sent:", message);
       throw new Error("Message content cannot be empty");
     }
+
     console.log("Sending message:", message);
     this.ws.send(JSON.stringify(message));
   }
 
   async transcribeAudio(audioBlob: Blob, courseId?: string): Promise<string> {
+    if (!this.token) {
+      console.error("Authentication required for transcription");
+      throw new Error("Authentication required");
+    }
+
     const formData = new FormData();
     formData.append("audio", audioBlob, "chatbot.webm");
     if (courseId) formData.append("course_id", courseId);
 
     try {
       const response = await api.post(`${API_URL}/qa/transcribe`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "Authorization": `Bearer ${this.token}`
+        },
       });
       return response.data.transcribed_text || "";
     } catch (error) {
       console.error("Transcription error:", error);
-      return "";
+      throw error;
     }
   }
 
@@ -145,7 +191,7 @@ class QAService {
   }
 
   isConnected() {
-    return this.ws?.readyState === WebSocket.OPEN;
+    return this.ws?.readyState === WebSocket.OPEN && this.isAuthenticated;
   }
 }
 
