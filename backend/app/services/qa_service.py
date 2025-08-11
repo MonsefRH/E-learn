@@ -9,7 +9,6 @@ import logging
 import asyncio
 
 from dotenv import load_dotenv
-from app.models.course import Course
 from fastapi import WebSocket
 
 load_dotenv()
@@ -97,14 +96,70 @@ class QAService:
     def __init__(self):
         self.manager = ConnectionManager()
         self.speech_service = SpeechToTextService()
-        api_key = os.getenv("GOOGLE_API_KEY")
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.authenticated = {}  # Store authenticated WebSocket connections
+        self.model_ws = None
 
-    async def process_question(self, websocket, question_text: str, course_id: str = None):
+    async def connect_to_model(self):
+        import websockets
         try:
-            logger.info(f"Processing question: {question_text} for course_id: {course_id}")
+            # Configure WebSocket with longer ping interval and timeout
+            self.model_ws = await websockets.connect(
+                "ws://localhost:8001/ws",
+                ping_interval=50,  # Increase ping interval (seconds)
+                ping_timeout=300,  # Increase timeout to 5 minutes
+                close_timeout=10   # Close timeout
+            )
+            logger.info("Successfully connected to model WebSocket")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to connect to model WebSocket: {e}")
+            return False
+
+    async def ask_model(self, question: str) -> str:
+        """Send a question to the model and get the response"""
+        if not self.model_ws:
+            if not await self.connect_to_model():
+                return "Failed to connect to model service"
+
+        try:
+            # Start a background task to keep the connection alive
+            heartbeat_task = asyncio.create_task(self._heartbeat())
+
+            await self.model_ws.send(question)
+            response = await self.model_ws.recv()
+
+            # Cancel the heartbeat task once we get a response
+            heartbeat_task.cancel()
+            return response
+        except Exception as e:
+            logger.error(f"Error communicating with model: {e}")
+            # Try to reconnect once
+            if await self.connect_to_model():
+                try:
+                    await self.model_ws.send(question)
+                    response = await self.model_ws.recv()
+                    return response
+                except Exception as e2:
+                    logger.error(f"Error after reconnection: {e2}")
+            return f"Error communicating with model: {str(e)}"
+
+    async def _heartbeat(self):
+        """Send periodic pings to keep the connection alive during long model inferences"""
+        try:
+            while True:
+                if self.model_ws and self.model_ws.open:
+                    logger.debug("Sending heartbeat ping to model service")
+                    pong_waiter = await self.model_ws.ping()
+                    await asyncio.wait_for(pong_waiter, timeout=10)
+                await asyncio.sleep(30)  # Send ping every 30 seconds
+        except asyncio.CancelledError:
+            # Task was cancelled, which is expected when we're done
+            pass
+        except Exception as e:
+            logger.warning(f"Heartbeat error: {e}")
+
+    async def process_question(self, websocket, question_text: str):
+        try:
             if not question_text or not question_text.strip():
                 await self.manager.send_response(websocket, {
                     "type": "error",
@@ -112,27 +167,12 @@ class QAService:
                 })
                 return
 
-            context = f"Context: Course ID {course_id} if applicable. " if course_id else ""
-            response = self.model.generate_content(f"{context}{question_text}")
-            text_response = response.text
+            text_response = await self.ask_model(f"{question_text}")
 
             await self.manager.send_response(websocket, {
                 "type": "text_response",
                 "text": text_response,
             })
-
-            # audio_base64 = await self.tts_service.synthesize_text_to_base64(text_response)
-            # if audio_base64:
-            #     await self.manager.send_response(websocket, {
-            #         "type": "audio_ready",
-            #         "audio_data": audio_base64,
-            #         "audio_format": "mp3",
-            #     })
-
-            # await self.manager.send_response(websocket, {
-            #     "type": "animation_ready",
-            #     "text": text_response,
-            # })
         except Exception as e:
             logger.error(f"Error processing question: {e}")
             await self.manager.send_response(websocket, {
@@ -142,7 +182,7 @@ class QAService:
 
     async def handle_voice_question(self, websocket, audio_data_b64: str):
         try:
-            logger.info(f"Handling voice question with chatbot data length: {len(audio_data_b64)}")
+            logger.info(f"Handling voice question with audio data length: {len(audio_data_b64)}")
             audio_data = base64.b64decode(audio_data_b64)
             await self.manager.send_response(websocket, {
                 "type": "transcribing",
@@ -152,7 +192,7 @@ class QAService:
             if not transcribed_text:
                 await self.manager.send_response(websocket, {
                     "type": "error",
-                    "message": "Failed to transcribe chatbot"
+                    "message": "Failed to transcribe audio"
                 })
                 return
 
@@ -182,7 +222,7 @@ class QAService:
                 "message": "Authentication failed"
             })
 
-    async def transcribe_audio(self, audio_file, course_id: str = None):
+    async def transcribe_audio(self, audio_file):
         try:
             audio_data = await audio_file.read()
             transcribed_text = await self.speech_service.transcribe_audio(audio_data)
