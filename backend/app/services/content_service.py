@@ -54,6 +54,8 @@ async def generate_content(course_id: int,language, response):
 
     generate_video(count,course_id)
 
+
+
     return {
         "slides": slides,
         "audio_files": audio_files
