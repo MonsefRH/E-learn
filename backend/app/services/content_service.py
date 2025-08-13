@@ -52,8 +52,6 @@ async def generate_content(ai_request_id: UUID, language: str, response: dict):
     video_path = generate_video(count, ai_request_id)
     print(f"Video generated: {video_path}")
 
-
-
     return {
         "slides": slides,
         "audio_files": audio_files,
@@ -198,36 +196,195 @@ def generate_html_slide(slide_data):
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }}
-        .container {{ max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1); overflow: hidden; animation: slideIn 0.6s ease-out; }}
-        @keyframes slideIn {{ from {{ opacity: 0; transform: translateY(30px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-        .header {{ background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); color: white; padding: 30px 40px; text-align: center; position: relative; overflow: hidden; }}
-        .header::before {{ content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat; opacity: 0.3; }}
-        .slide-number {{ position: absolute; top: 20px; right: 30px; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 20px; font-size: 14px; font-weight: 500; }}
-        .title {{ font-size: 2.5em; font-weight: 700; margin-bottom: 10px; position: relative; z-index: 1; }}
-        .content {{ padding: 40px; }}
-        .summary {{ background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 5px solid #3498db; padding: 25px; margin-bottom: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); }}
-        .summary h2 {{ color: #2c3e50; font-size: 1.4em; margin-bottom: 20px; display: flex; align-items: center; }}
-        .summary h2::before {{ content: "📚"; margin-right: 10px; font-size: 1.2em; }}
-        .summary ul {{ list-style: none; padding-left: 0; }}
-        .summary li {{ margin: 15px 0; padding: 12px 0; border-bottom: 1px solid #dee2e6; position: relative; padding-left: 25px; }}
-        .summary li::before {{ content: "▶"; position: absolute; left: 0; color: #3498db; font-size: 0.8em; }}
-        .summary li:last-child {{ border-bottom: none; }}
-        .summary strong {{ color: #2c3e50; font-weight: 600; }}
-        .code-section {{ background: #1e1e1e; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); margin-top: 30px; }}
-        .code-header {{ background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%); color: white; padding: 15px 25px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }}
-        .code-header::before {{ content: "☕"; margin-right: 10px; font-size: 1.2em; }}
-        .code-lang {{ background: rgba(255, 255, 255, 0.2); padding: 4px 12px; border-radius: 15px; font-size: 0.9em; }}
-        .code-content {{ padding: 0; }}
-        .code-content pre {{ margin: 0; padding: 25px; background: #1e1e1e; color: #f8f8f2; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 14px; line-height: 1.5; overflow-x: auto; }}
-        .code-content pre code {{ background: none; padding: 0; border-radius: 0; }}
-        .navigation {{ background: #f8f9fa; padding: 20px 40px; border-top: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center; }}
-        .nav-button {{ background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; font-weight: 500; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }}
-        .nav-button:hover {{ transform: translateY(-2px); box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4); }}
-        .nav-button:disabled {{ background: #bdc3c7; cursor: not-allowed; transform: none; box-shadow: none; }}
-        .slide-indicator {{ background: #e9ecef; border-radius: 15px; padding: 8px 16px; color: #6c757d; font-size: 0.9em; font-weight: 500; }}
-        .unavailable {{ color: #e74c3c; font-style: italic; text-align: center; padding: 20px; background: #fdf2f2; border-radius: 8px; border: 1px solid #f5c6cb; }}
-        @media (max-width: 768px) {{ .container {{ margin: 10px; border-radius: 10px; }} .header {{ padding: 20px; }} .title {{ font-size: 2em; }} .content {{ padding: 20px; }} .navigation {{ padding: 15px 20px; flex-direction: column; gap: 15px; }} .nav-button {{ width: 100%; justify-content: center; }} }}
+        body {{ 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            background: white; 
+            min-height: 100vh; 
+            padding: 20px; 
+        }}
+        .container {{ 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            border: 2px solid #0066CC; 
+            border-radius: 8px; 
+        }}
+        .header {{ 
+            background: #0066CC; 
+            color: white; 
+            padding: 20px 30px; 
+            position: relative; 
+        }}
+        .slide-number {{ 
+            position: absolute; 
+            top: 20px; 
+            right: 30px; 
+            background: rgba(255, 255, 255, 0.2); 
+            padding: 5px 10px; 
+            border-radius: 4px; 
+            font-size: 14px; 
+        }}
+        .title {{ 
+            font-size: 1.8em; 
+            font-weight: 600; 
+            margin-bottom: 10px; 
+        }}
+        .content {{ 
+            padding: 30px; 
+        }}
+        .summary {{ 
+            background: #f8f9fa; 
+            border: 1px solid #e9ecef; 
+            border-left: 4px solid #0066CC; 
+            padding: 20px; 
+            margin-bottom: 30px; 
+            border-radius: 4px; 
+        }}
+        .summary h2 {{ 
+            color: #0066CC; 
+            font-size: 1.2em; 
+            margin-bottom: 15px; 
+            font-weight: 600; 
+        }}
+        .summary ul {{ 
+            list-style: none; 
+            padding-left: 0; 
+        }}
+        .summary li {{ 
+            margin: 10px 0; 
+            padding: 8px 0; 
+            border-bottom: 1px solid #e9ecef; 
+            padding-left: 15px; 
+            position: relative; 
+        }}
+        .summary li::before {{ 
+            content: "•"; 
+            position: absolute; 
+            left: 0; 
+            color: #0066CC; 
+            font-weight: bold; 
+        }}
+        .summary li:last-child {{ 
+            border-bottom: none; 
+        }}
+        .summary strong {{ 
+            color: #333; 
+            font-weight: 600; 
+        }}
+        .code-section {{ 
+            border: 1px solid #e9ecef; 
+            border-radius: 4px; 
+            overflow: hidden; 
+            margin-top: 20px; 
+        }}
+        .code-header {{ 
+            background: #0066CC; 
+            color: white; 
+            padding: 10px 20px; 
+            font-weight: 500; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }}
+        .code-lang {{ 
+            background: rgba(255, 255, 255, 0.2); 
+            padding: 3px 8px; 
+            border-radius: 3px; 
+            font-size: 0.9em; 
+        }}
+        .code-content {{ 
+            background: white; 
+            border-top: 1px solid #e9ecef; 
+        }}
+        .code-content pre {{ 
+            margin: 0; 
+            padding: 20px; 
+            background: white; 
+            color: #333; 
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            overflow-x: auto; 
+            border: none; 
+        }}
+        .code-content pre code {{ 
+            background: none; 
+            padding: 0; 
+            border-radius: 0; 
+            color: #333; 
+        }}
+        .navigation {{ 
+            background: #f8f9fa; 
+            padding: 15px 30px; 
+            border-top: 1px solid #e9ecef; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }}
+        .nav-button {{ 
+            background: #0066CC; 
+            color: white; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: 500; 
+            text-decoration: none; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 5px; 
+            transition: background-color 0.2s ease; 
+        }}
+        .nav-button:hover {{ 
+            background: #0052A3; 
+        }}
+        .nav-button:disabled {{ 
+            background: #ccc; 
+            cursor: not-allowed; 
+        }}
+        .slide-indicator {{ 
+            background: white; 
+            border: 1px solid #e9ecef; 
+            border-radius: 4px; 
+            padding: 5px 12px; 
+            color: #666; 
+            font-size: 0.9em; 
+        }}
+        .unavailable {{ 
+            color: #666; 
+            font-style: italic; 
+            text-align: center; 
+            padding: 20px; 
+            background: #f8f9fa; 
+            border-radius: 4px; 
+            border: 1px solid #e9ecef; 
+        }}
+        @media (max-width: 768px) {{ 
+            .container {{ 
+                margin: 10px; 
+                border-radius: 4px; 
+            }} 
+            .header {{ 
+                padding: 15px 20px; 
+            }} 
+            .title {{ 
+                font-size: 1.5em; 
+            }} 
+            .content {{ 
+                padding: 20px; 
+            }} 
+            .navigation {{ 
+                padding: 15px 20px; 
+                flex-direction: column; 
+                gap: 10px; 
+            }} 
+            .nav-button {{ 
+                width: 100%; 
+                justify-content: center; 
+            }} 
+        }}
     </style>
 </head>
 <body>
@@ -242,8 +399,7 @@ def generate_html_slide(slide_data):
             </div>
             <div class="code-section">
                 <div class="code-header">
-                    <span>Code Java</span>
-                    <span class="code-lang">Java</span>
+                    <span>Code</span>
                 </div>
                 <div class="code-content">
                     {slide_data.get('example_code', '<pre><code>// Code indisponible</code></pre>')}
@@ -252,7 +408,8 @@ def generate_html_slide(slide_data):
         </div>
     </div>
 </body>
-</html>"""
+</html>
+"""
     return html_template
 
 def capture_slide(html_path: str, output_png: str):
@@ -364,21 +521,8 @@ def generate_video(nbr_slides, ai_request_id: UUID):
             if os.path.exists(v):
                 os.remove(v)
         raise e
-    
+
 async def transfer_video(ai_request_id: UUID, spring_boot_host: str = "localhost") -> dict:
-    # """
-    # Transfer a generated video to Spring Boot for the given ai_request_id.
-    
-    # Args:
-    #     ai_request_id (UUID): The UUID of the AI request.
-    #     spring_boot_host (str): The Spring Boot host (default: localhost).
-    
-    # Returns:
-    #     dict: Response containing transfer status and Spring Boot response.
-    
-    # Raises:
-    #     HTTPException: If the video file is not found or transfer fails.
-    # """
     try:
         video_path = f"presentations/{ai_request_id}/{ai_request_id}.mp4"
         if not os.path.exists(video_path):
@@ -392,7 +536,7 @@ async def transfer_video(ai_request_id: UUID, spring_boot_host: str = "localhost
                 response = await client.post(
                     f"http://{spring_boot_host}:8081/soft-skills/ai-resources/store/{ai_request_id}",
                     files=files
-)
+                )
                 logger.info(f"Spring Boot response status: {response.status_code}")
                 if response.status_code != 200:
                     logger.error(f"Failed to send video to Spring Boot: {response.text}")
