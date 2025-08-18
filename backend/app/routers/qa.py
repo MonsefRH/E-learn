@@ -17,26 +17,10 @@ async def websocket_endpoint(websocket: WebSocket):
             logger.info(f"Received message from {websocket.client}: {data}")
             message = json.loads(data)
 
-            if message.get("type") == "auth":
-                token = message.get("token", "")
-                await qa_service.handle_auth(websocket, token)
-                continue
-
-            if websocket not in qa_service.authenticated:
-                await qa_service.manager.send_response(websocket, {
-                    "type": "error",
-                    "message": "Authentication required"
-                })
-                continue
-
-            if message.get("type") == "text_question":
+            try:
                 question_text = message.get("question", "")
-                course_id = message.get("course_id", None)
-                await qa_service.process_question(websocket, question_text, course_id)
-            elif message.get("type") == "voice_question":
-                audio_data_b64 = message.get("audio_data", "")
-                await qa_service.handle_voice_question(websocket, audio_data_b64)
-            else:
+                await qa_service.process_question(websocket, question_text)
+            except json.JSONDecodeError:
                 await qa_service.manager.send_response(websocket, {
                     "type": "error",
                     "message": "Invalid message type"
@@ -57,7 +41,3 @@ async def websocket_endpoint(websocket: WebSocket):
             "message": f"Server error: {str(e)}"
         })
 
-@router.post("/transcribe")
-async def transcribe_audio(audio: UploadFile, course_id: str = Form(None)):
-    result = await qa_service.transcribe_audio(audio, course_id)
-    return result
