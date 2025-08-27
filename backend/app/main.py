@@ -1,3 +1,6 @@
+import json
+from urllib.request import Request
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, courses, lessons, categories, user, qa, sessions,groups
@@ -20,6 +23,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    body = await request.body()
+    print("📩 Incoming request")
+    print(f"➡️ URL: {request.url}")
+    print(f"➡️ Method: {request.method}")
+    print(f"➡️ Headers: {dict(request.headers)}")
+    try:
+        print(f"➡️ Body JSON: {json.loads(body.decode())}")
+    except Exception:
+        print(f"➡️ Raw Body: {body.decode(errors='ignore')}")
+
+    response = await call_next(request)
+    return response
 
 # Initialize database
 init_db()

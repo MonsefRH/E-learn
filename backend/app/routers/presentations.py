@@ -73,9 +73,9 @@ async def send_to_model(ai_request_id: UUID, payload: CourseRequest, model_api_h
         raise HTTPException(status_code=500, detail=f"Error initiating video generation: {str(e)}")
 
 @router.post("/api/presentations/{ai_request_id}/generate/process")
-async def process_content(ai_request_id: UUID, payload: CourseRequest, response: dict, spring_boot_host: str = "localhost", x_api_key: str = Depends(verify_api_key)):
+async def process_content(ai_request_id: UUID, payload: CourseRequest, response: dict, spring_boot_host: str = "localhost"):
     try:
-        result = await check_and_generate_video(ai_request_id, payload.language, response, spring_boot_host)
+        result = await check_and_generate_video(ai_request_id, language, response, spring_boot_host)
         return {"message": "Video processed and sent to Spring Boot successfully", "result": result}
     except Exception as e:
         logger.error(f"Error processing content for ai_request_id {ai_request_id}: {str(e)}")
