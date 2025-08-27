@@ -8,7 +8,7 @@ from app.models.course import Course
 from app.models.lesson import Lesson
 from app.models.group import Group
 from app.models.session import Session
-from backend.app.routers import presentations
+from app.routers import presentations
 
 app = FastAPI(title="AI-Powered E-Learning Platform Backend")
 

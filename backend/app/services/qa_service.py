@@ -213,16 +213,17 @@ class QAService:
 
     async def handle_auth(self, websocket, token: str):
         logger.info(f"Auth attempt from {websocket.client} with token: {token[:10]}...")
-        if token:  # Replace with actual validation logic
+        valid_token = os.getenv("WEBSOCKET_KEY")
+        if token == valid_token:
             self.authenticated[websocket] = True
             await self.manager.send_response(websocket, {
                 "type": "auth_success"
             })
         else:
-            await self.manager.send_response(websocket, {
-                "type": "error",
-                "message": "Authentication failed"
-            })
+                await self.manager.send_response(websocket, {
+                    "type": "error",
+                    "message": "Authentication failed"
+                })
 
     async def transcribe_audio(self, audio_file, course_id: str = None):
         try:

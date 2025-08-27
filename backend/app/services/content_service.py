@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends, Header
 import json
 from pathlib import Path
 import subprocess
@@ -12,45 +12,52 @@ from app.schemas.courseRequest import CourseRequest
 from uuid import UUID
 import logging
 
+API_KEY = os.getenv("API_KEY")
+
 logger = logging.getLogger(__name__)
 
+async def verify_api_key(x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        logger.error("Invalid or missing API key")
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+    logger.debug("API key validated successfully")
 
-async def send_content(payload: CourseRequest, ai_request_id: UUID, model_api_host: str = "localhost"):
-    print(f"Initiating content generation with payload: {payload}")
+async def send_content(payload: CourseRequest, ai_request_id: UUID, model_api_host: str = "localhost", x_api_key: str = Depends(verify_api_key)):
+    logger.info(f"Initiating content generation with payload: {payload}")
     async with httpx.AsyncClient() as client:
-        print(f"Sending request to model API for ai_request_id: {ai_request_id}")
+        logger.info(f"Sending request to model API for ai_request_id: {ai_request_id}")
         model_response = await client.post(
             f"http://{model_api_host}:8001/generate/{ai_request_id}",
             json=payload.dict()
         )
-        print(f"Model API response status: {model_response.status_code}")
+        logger.info(f"Model API response status: {model_response.status_code}")
         if model_response.status_code != 200:
             raise Exception(f"Model API failed: {model_response.text}")
         response_data = model_response.json()
-        print(f"Model API response: {response_data}")
+        logger.info(f"Model API response: {response_data}")
         return response_data
 
 async def generate_content(ai_request_id: UUID, language: str, response: dict):
-    print(f"Generating content for ai_request_id: {ai_request_id}")
+    logger.info(f"Generating content for ai_request_id: {ai_request_id}")
     course_path = Path(f"presentations/{ai_request_id}")
     course_path.mkdir(parents=True, exist_ok=True)
-    print(f"Created directory: {course_path}")
+    logger.info(f"Created directory: {course_path}")
 
-    print(f"Received model response: {response}")
+    logger.info(f"Received model response: {response}")
 
-    print("Generating slides...")
+    logger.info("Generating slides...")
     slides = await generate_slides(response.get('slides', []), str(course_path / "slides"))
-    print(f"Generated slides: {slides}")
+    logger.info(f"Generated slides: {slides}")
 
-    print("Creating audio...")
+    logger.info("Creating audio...")
     audio_files = await create_audio(response.get('speech', []), language, str(course_path / "audios"))
-    print(f"Created audio files: {audio_files}")
+    logger.info(f"Created audio files: {audio_files}")
 
     count = count_slides(slides)
 
-    print("Generating video...")
+    logger.info("Generating video...")
     video_path = generate_video(count, ai_request_id)
-    print(f"Video generated: {video_path}")
+    logger.info(f"Video generated: {video_path}")
 
     return {
         "slides": slides,
@@ -58,17 +65,16 @@ async def generate_content(ai_request_id: UUID, language: str, response: dict):
         "video": video_path
     }
 
-async def check_and_generate_video(ai_request_id: UUID, language: str, response: dict, spring_boot_host: str = "localhost"):
+async def check_and_generate_video(ai_request_id: UUID, language: str, response: dict, spring_boot_host: str = "localhost", x_api_key: str = Depends(verify_api_key)):
     video_path = f"presentations/{ai_request_id}/{ai_request_id}.mp4"
     if os.path.exists(video_path):
-        print(f"Video already exists for ai_request_id: {ai_request_id} at {video_path}")
+        logger.info(f"Video already exists for ai_request_id: {ai_request_id} at {video_path}")
     else:
-        print(f"No existing video found for ai_request_id: {ai_request_id}, generating...")
+        logger.info(f"No existing video found for ai_request_id: {ai_request_id}, generating...")
         await generate_content(ai_request_id, language, response)
 
-    # Send video to Spring Boot
     async with httpx.AsyncClient() as client:
-        print(f"Sending video to Spring Boot for ai_request_id: {ai_request_id}")
+        logger.info(f"Sending video to Spring Boot for ai_request_id: {ai_request_id}")
         with open(video_path, 'rb') as video_file:
             files = {'video': (f"{ai_request_id}.mp4", video_file, 'video/mp4')}
             metadata = {
@@ -80,26 +86,27 @@ async def check_and_generate_video(ai_request_id: UUID, language: str, response:
             response = await client.post(
                 f"http://{spring_boot_host}:8081/soft-skills/ai-resources/store/{ai_request_id}",
                 files=files,
-                data={'courseRequest': json.dumps(metadata)}
+                data={'courseRequest': json.dumps(metadata)},
+                headers={"X-API-Key": API_KEY}
             )
-            print(f"Spring Boot response status: {response.status_code}")
+            logger.info(f"Spring Boot response status: {response.status_code}")
             if response.status_code != 200:
-                print(f"Failed to send video to Spring Boot: {response.text}")
+                logger.error(f"Failed to send video to Spring Boot: {response.text}")
                 raise Exception(f"Failed to send video to Spring Boot: {response.text}")
-            print(f"Spring Boot notified successfully: {response.json()}")
+            logger.info(f"Spring Boot notified successfully: {response.json()}")
     return {"video": video_path}
 
 async def create_audio(speech, language: str, path: str):
-    print(f"Creating audio with language: {language}, path: {path}")
+    logger.info(f"Creating audio with language: {language}, path: {path}")
     os.makedirs(path, exist_ok=True)
-    print(f"Created audio directory: {path}")
+    logger.info(f"Created audio directory: {path}")
     if isinstance(speech, str):
-        print("Speech is string, parsing JSON")
+        logger.info("Speech is string, parsing JSON")
         speech_data = json.loads(speech)
     else:
-        print("Speech is object")
+        logger.info("Speech is object")
         speech_data = speech
-    print(f"Speech data: {speech_data}")
+    logger.info(f"Speech data: {speech_data}")
 
     generated_files = []
 
@@ -123,14 +130,14 @@ async def create_audio(speech, language: str, path: str):
         elif language == "it":
             voice = "it-IT-ElsaNeural"
 
-        print(f"Generating audio for slide {slide_id} with voice {voice}")
+        logger.info(f"Generating audio for slide {slide_id} with voice {voice}")
         await generate_audio(
             speech_text=script,
             file_name=file_name,
             file_path=path,
             voice=voice
         )
-        print(f"Audio generated for slide {slide_id}")
+        logger.info(f"Audio generated for slide {slide_id}")
 
         generated_files.append({
             "slide_id": slide_id,
@@ -147,38 +154,38 @@ async def generate_audio(speech_text: str, file_name: str, file_path: str, voice
     return full_path
 
 async def generate_slides(slides, path: str):
-    print(f"Starting generate_slides with slides: {slides} and path: {path}")
+    logger.info(f"Starting generate_slides with slides: {slides} and path: {path}")
     output_dir = Path(path)
     output_dir.mkdir(exist_ok=True)
-    print(f"Created output directory: {output_dir}")
+    logger.info(f"Created output directory: {output_dir}")
 
     generated_files = []
 
     for slide in slides:
-        print(f"Processing slide: {slide}")
+        logger.info(f"Processing slide: {slide}")
         slide_id = slide.get("id")
         if slide_id is None:
-            print(f"Skipping slide without ID: {slide}")
+            logger.warning(f"Skipping slide without ID: {slide}")
             continue
 
-        print(f"Generating HTML for slide ID {slide_id}")
+        logger.info(f"Generating HTML for slide ID {slide_id}")
         html_content = generate_html_slide(slide)
-        print(f"HTML content generated with length: {len(html_content)}")
+        logger.info(f"HTML content generated with length: {len(html_content)}")
 
         filename = f"slide{slide_id}.html"
         filepath = output_dir / filename
-        print(f"Writing to file: {filepath}")
+        logger.info(f"Writing to file: {filepath}")
 
         with open(filepath, 'w', encoding='utf-8') as html_file:
             html_file.write(html_content)
-        print(f"File written successfully: {filepath}")
+        logger.info(f"File written successfully: {filepath}")
 
         generated_files.append({
             "slide_id": slide_id,
             "html_file": str(filepath)
         })
 
-    print(f"Returning {len(generated_files)} generated files")
+    logger.info(f"Returning {len(generated_files)} generated files")
     return generated_files
 
 def count_slides(slides):
@@ -274,9 +281,9 @@ def capture_slide(html_path: str, output_png: str):
         driver.set_window_size(1920, 1080)
         time.sleep(1)
         driver.save_screenshot(output_png)
-        print(f"Screenshot saved: {output_png}")
+        logger.info(f"Screenshot saved: {output_png}")
     except Exception as e:
-        print(f"Error capturing slide {html_path}: {e}")
+        logger.error(f"Error capturing slide {html_path}: {e}")
         raise
     finally:
         if driver:
@@ -291,10 +298,10 @@ def create_video_from_image_audio(image: str, audio: str, output: str):
             '-pix_fmt', 'yuv420p', '-shortest', output
         ]
         subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print(f"Video created: {output}")
+        logger.info(f"Video created: {output}")
     except subprocess.CalledProcessError as e:
-        print(f"Error creating video {output}: {e}")
-        print(f"FFmpeg stderr: {e.stderr}")
+        logger.error(f"Error creating video {output}: {e}")
+        logger.error(f"FFmpeg stderr: {e.stderr}")
         raise
 
 def concat_videos(video_list: list, output_file: str):
@@ -307,11 +314,11 @@ def concat_videos(video_list: list, output_file: str):
                 f.write(f"file '{abs_video_path}'\n")
         cmd = ['ffmpeg', '-y', '-f', 'concat', '-safe', '0', '-i', videos_txt, '-c', 'copy', output_file]
         subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print(f"Final video created: {output_file}")
+        logger.info(f"Final video created: {output_file}")
         os.remove(videos_txt)
     except subprocess.CalledProcessError as e:
-        print(f"Error concatenating videos: {e}")
-        print(f"FFmpeg stderr: {e.stderr}")
+        logger.error(f"Error concatenating videos: {e}")
+        logger.error(f"FFmpeg stderr: {e.stderr}")
         raise
 
 def generate_video(nbr_slides, ai_request_id: UUID):
@@ -333,13 +340,13 @@ def generate_video(nbr_slides, ai_request_id: UUID):
             video = f"{output_dir}/slide{i}.mp4"
 
             if not os.path.exists(html):
-                print(f"Warning: HTML file not found: {html}")
+                logger.warning(f"HTML file not found: {html}")
                 continue
             if not os.path.exists(audio):
-                print(f"Warning: Audio file not found: {audio}")
+                logger.warning(f"Audio file not found: {audio}")
                 continue
 
-            print(f"Processing slide {i}...")
+            logger.info(f"Processing slide {i}...")
             capture_slide(html, image)
             create_video_from_image_audio(image, audio, video)
             videos.append(video)
@@ -355,28 +362,15 @@ def generate_video(nbr_slides, ai_request_id: UUID):
             if os.path.exists(v):
                 os.remove(v)
 
-        print(f"Course video generated successfully: {final_video}")
+        logger.info(f"Course video generated successfully: {final_video}")
         return final_video
     except Exception as e:
         for v in videos:
             if os.path.exists(v):
                 os.remove(v)
         raise e
-    
-async def transfer_video(ai_request_id: UUID, spring_boot_host: str = "localhost") -> dict:
-    # """
-    # Transfer a generated video to Spring Boot for the given ai_request_id.
-    
-    # Args:
-    #     ai_request_id (UUID): The UUID of the AI request.
-    #     spring_boot_host (str): The Spring Boot host (default: localhost).
-    
-    # Returns:
-    #     dict: Response containing transfer status and Spring Boot response.
-    
-    # Raises:
-    #     HTTPException: If the video file is not found or transfer fails.
-    # """
+
+async def transfer_video(ai_request_id: UUID, spring_boot_host: str = "localhost", x_api_key: str = Depends(verify_api_key)) -> dict:
     try:
         video_path = f"presentations/{ai_request_id}/{ai_request_id}.mp4"
         if not os.path.exists(video_path):
@@ -389,8 +383,9 @@ async def transfer_video(ai_request_id: UUID, spring_boot_host: str = "localhost
                 files = {'video': (f"{ai_request_id}.mp4", video_file, 'video/mp4')}
                 response = await client.post(
                     f"http://{spring_boot_host}:8081/soft-skills/ai-resources/store/{ai_request_id}",
-                    files=files
-)
+                    files=files,
+                    headers={"X-API-Key": API_KEY}
+                )
                 logger.info(f"Spring Boot response status: {response.status_code}")
                 if response.status_code != 200:
                     logger.error(f"Failed to send video to Spring Boot: {response.text}")
@@ -401,4 +396,4 @@ async def transfer_video(ai_request_id: UUID, spring_boot_host: str = "localhost
         raise e
     except Exception as e:
         logger.error(f"Error transferring video for ai_request_id {ai_request_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Video transferred ")
+        raise HTTPException(status_code=500, detail=f"Error transferring video: {str(e)}")

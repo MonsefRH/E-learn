@@ -31,8 +31,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if message.get("type") == "text_question":
                 question_text = message.get("question", "")
-                course_id = message.get("course_id", None)
-                await qa_service.process_question(websocket, question_text, course_id)
+                await qa_service.process_question(websocket, question_text)
             elif message.get("type") == "voice_question":
                 audio_data_b64 = message.get("audio_data", "")
                 await qa_service.handle_voice_question(websocket, audio_data_b64)
