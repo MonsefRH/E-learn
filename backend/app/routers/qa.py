@@ -31,7 +31,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if message.get("type") == "text_question":
                 question_text = message.get("question", "")
-                course_id = message.get("course_id", None)
                 await qa_service.process_question(websocket, question_text)
             elif message.get("type") == "voice_question":
                 audio_data_b64 = message.get("audio_data", "")
@@ -57,7 +56,3 @@ async def websocket_endpoint(websocket: WebSocket):
             "message": f"Server error: {str(e)}"
         })
 
-@router.post("/transcribe")
-async def transcribe_audio(audio: UploadFile, course_id: str = Form(None)):
-    result = await qa_service.transcribe_audio(audio, course_id)
-    return result

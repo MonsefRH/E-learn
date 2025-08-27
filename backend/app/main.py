@@ -1,14 +1,9 @@
-import os
-from dotenv import load_dotenv
+import json
+from urllib.request import Request
 
-load_dotenv()
-
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_CREDENTIALS_PATH", "")
-
-# Now import modules that use Google Cloud
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, courses, slides, lessons, categories, user, qa, sessions,groups
+from app.routers import auth, courses, lessons, categories, user, qa, sessions,groups
 from app.configs.db import init_db
 from app.models.user import User
 from app.models.category import Category
@@ -16,6 +11,7 @@ from app.models.course import Course
 from app.models.lesson import Lesson
 from app.models.group import Group
 from app.models.session import Session
+from app.routers import presentations
 
 app = FastAPI(title="AI-Powered E-Learning Platform Backend")
 
@@ -28,13 +24,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    body = await request.body()
+    print("📩 Incoming request")
+    print(f"➡️ URL: {request.url}")
+    print(f"➡️ Method: {request.method}")
+    print(f"➡️ Headers: {dict(request.headers)}")
+    try:
+        print(f"➡️ Body JSON: {json.loads(body.decode())}")
+    except Exception:
+        print(f"➡️ Raw Body: {body.decode(errors='ignore')}")
+
+    response = await call_next(request)
+    return response
+
 # Initialize database
 init_db()
 
 # Include routers
 app.include_router(auth.router)
 app.include_router(courses.router)
-app.include_router(slides.router)
+app.include_router(presentations.router)
 app.include_router(lessons.router)
 app.include_router(user.router)
 app.include_router(categories.router)
