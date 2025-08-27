@@ -17,7 +17,19 @@ async def websocket_endpoint(websocket: WebSocket):
             logger.info(f"Received message from {websocket.client}: {data}")
             message = json.loads(data)
 
-            try:
+            if message.get("type") == "auth":
+                token = message.get("token", "")
+                await qa_service.handle_auth(websocket, token)
+                continue
+
+            if websocket not in qa_service.authenticated:
+                await qa_service.manager.send_response(websocket, {
+                    "type": "error",
+                    "message": "Authentication required"
+                })
+                continue
+
+            if message.get("type") == "text_question":
                 question_text = message.get("question", "")
                 await qa_service.process_question(websocket, question_text)
             elif message.get("type") == "voice_question":
