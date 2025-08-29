@@ -44,12 +44,12 @@ Download from [FFmpeg official site](https://ffmpeg.org/download.html)
 
 ### Backend
 ```bash
+    cd ./backend
     # Set up .env
     cp .env.example .env
     # Then customize the variables 
 ```
 ```bash
-    cd ./backend
     # Create/Activate a virtual environement
     python3 -m venv venv
     venv\Scripts\activate
