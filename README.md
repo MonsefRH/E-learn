@@ -1,6 +1,7 @@
 # AI-Powered Learning Platform 
 
-Welcome to the AI-Powered Learning Platform! This web app integrates a React frontend with a FastAPI backend, using PostgreSQL for data storage and FFmpeg for audio/video processing. It’s an online classroom where trainers create sessions with AI-generated slides and audio, learners access them based on group membership, and admins manage everything. This README is a step-by-step guide to explain the app, set it up, and use it, even if you’re new to coding.
+Welcome to the AI-Powered Learning Platform! This web app integrates a React frontend with a FastAPI backend, using PostgreSQL for data storage and FFmpeg for audio/video processing. It’s an online classroom where trainers create sessions with AI-generated slides and audio, learners access them based on group membership, and admins manage everything.
+This README is a step-by-step guide to explain the app, set it up, and use it.
 
 
 ## Prerequisites
@@ -16,67 +17,68 @@ Welcome to the AI-Powered Learning Platform! This web app integrates a React fro
 ## Installation 
 
 ### 1. Clone the Repository
-bash
+```bash
 git clone https://github.com/MonsefRH/E-learn.git
 cd E-learn
+```
 
 ### 2. Set Up PostgreSQL
 
 * Access the PostgreSQL prompt
-bash
+```bash
     psql -U postgres
-
+```
 * Create a database and user
-sql
+```sql
     CREATE DATABASE elearning;
     CREATE USER admin WITH PASSWORD 'your_password';
     GRANT ALL PRIVILEGES ON DATABASE elearning TO admin;
-
+```
 * Access Database  
-bash
+```bash
     psql -U admin -W elearning  
-
+```
 ### 3.Install FFmpeg
 Download from [FFmpeg official site](https://ffmpeg.org/download.html)
 ## Set Up the Application 
 
 ### Backend
-bash
+```bash
     cd ./backend
     # Create/Activate a virtual environement
     python3 -m venv venv
     venv\Scripts\activate
-
-bash
+```
+```bash
     # Install dependencies 
     pip install -r requirements.txt 
-
-bash
+```
+```bash
     # Set up .env
     cp .env.example .env
     # Then customize the variables 
-
+```
 ### Frontend 
-bash
+```bash
     # Navigate to the frontend folder 
     cd ./frontend
     # Install the libraries
     npm start
-
+```
 
 ## Key Features Overview
 
-*Role-Based Access Control*: Admin privileges required for management endpoints (e.g., sessions, users, groups, courses, lessons).
+**Role-Based Access Control**: Admin privileges required for management endpoints (e.g., sessions, users, groups, courses, lessons).
 
-*Real-Time Interaction*: WebSocket support for Q&A, enabling dynamic learner engagement.
+**Real-Time Interaction**: WebSocket support for Q&A, enabling dynamic learner engagement.
 
-*Content Delivery*: Streamed audio and HTML-based slide presentations for an interactive learning experience.
+**Content Delivery**: Streamed audio and HTML-based slide presentations for an interactive learning experience.
 
-*User Customization*: Supports updating user profiles, passwords, and learner levels.
+**User Customization**: Supports updating user profiles, passwords, and learner levels.
 
-*Scalable Content Generation*: Asynchronous generation of slides, audio, and video content with integration to external services.
+**Scalable Content Generation**: Asynchronous generation of slides, audio, and video content with integration to external services.
 
-*Multimedia Support*: Leverages FFmpeg and edge_tts for high-quality video and audio production.
+**Multimedia Support**: Leverages FFmpeg and edge_tts for high-quality video and audio production.
 
 ### Role-Specific Features
 
