@@ -25,17 +25,18 @@ async def verify_api_key(x_api_key: str = Header(...)):
 async def send_content(payload: CourseRequest, ai_request_id: UUID, model_api_host: str = "localhost", x_api_key: str = Depends(verify_api_key)):
     logger.info(f"Initiating content generation with payload: {payload}")
     async with httpx.AsyncClient() as client:
-        logger.info(f"Sending request to model API for ai_request_id: {ai_request_id}")
+        print(f"Sending request to model API for ai_request_id: {ai_request_id}")
         model_response = await client.post(
             f"http://{model_api_host}:8001/generate/{ai_request_id}",
             json=payload.dict()
         )
-        logger.info(f"Model API response status: {model_response.status_code}")
+        print(f"Model API response status: {model_response.status_code}")
         if model_response.status_code != 200:
             raise Exception(f"Model API failed: {model_response.text}")
         response_data = model_response.json()
-        logger.info(f"Model API response: {response_data}")
+        print(f"Model API response: {response_data}")
         return response_data
+
 
 async def generate_content(ai_request_id: UUID, language: str, response: dict):
     logger.info(f"Generating content for ai_request_id: {ai_request_id}")
