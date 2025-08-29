@@ -52,6 +52,8 @@ Download from [FFmpeg official site](https://ffmpeg.org/download.html)
 ```bash
     # Install dependencies 
     pip install -r requirements.txt 
+    # Run the Backend
+    uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 ```bash
     # Set up .env
@@ -63,7 +65,9 @@ Download from [FFmpeg official site](https://ffmpeg.org/download.html)
     # Navigate to the frontend folder 
     cd ./frontend
     # Install the libraries
-    npm start
+    npm install
+    # Run the Frontend
+    npm run dev
 ```
 
 ## Key Features Overview
