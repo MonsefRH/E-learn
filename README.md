@@ -39,38 +39,39 @@ cd E-learn
     psql -U admin -W elearning  
 ```
 ### 3.Install FFmpeg
-1. Rendez-vous sur le site officiel : [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html)  
-2. Cliquez sur **Windows** → vous serez redirigé vers la page des builds.  
-3. Téléchargez la version **“Static”** (précompilée) depuis **Gyan.dev** ou **BtbN**.  
-   - Exemple : `ffmpeg-release-essentials.zip`
+##  Download FFmpeg
+Go to the official website: [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html)  
+Click on **Windows** → you will be redirected to the builds page.  
+Download the **“Static”** version (precompiled) from **Gyan.dev** or **BtbN**.  
+- Example: `ffmpeg-release-essentials.zip`
 
----
-
-##  Décompresser l’archive
-1. Ouvrez le fichier `.zip` téléchargé.  
-2. Décompressez-le dans un dossier de votre choix, par exemple : 
+##  Extract the Archive
+1. Open the downloaded `.zip` file.  
+2. Extract it to a folder of your choice, for example:  
  ```C:\ffmpeg```
 
-3. À l’intérieur, vous verrez un dossier `bin` contenant `ffmpeg.exe`, `ffplay.exe`, etc.
+3. Inside, you will see a `bin` folder containing `ffmpeg.exe`, `ffplay.exe`, etc.
 
----
 
-## ️Ajouter FFmpeg au PATH
-1. Ouvrez le **menu Démarrer** et recherchez **“Paramètres système avancés”** → cliquez sur **Variables d’environnement**.  
-2. Dans **Variables système**, sélectionnez **Path** → **Modifier** → **Nouveau**.  
-3. Ajoutez le chemin complet du dossier `bin` de FFmpeg, par exemple :  
+
+##  Add FFmpeg to the PATH
+1. Open the **Start Menu** and search for **“Advanced system settings”** → click **Environment Variables**.  
+2. In **System Variables**, select **Path** → **Edit** → **New**.  
+3. Add the full path to the `bin` folder of FFmpeg, for example:
 ```C:\ffmpeg\bin```
 
-4. Cliquez sur **OK** partout pour valider.
+4. Click **OK** everywhere to save.
 
----
 
-## Vérifier l’installation
-1. Ouvrez **l’invite de commandes (cmd)**.  
-2. Tapez :
+
+## Verify the Installation
+1. Open the **Command Prompt (cmd)**.  
+2. Type:
 ```bash
 ffmpeg -version
 ```
+
+
 ## Set Up the Application 
 
 ### Backend
