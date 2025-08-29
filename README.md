@@ -44,6 +44,11 @@ Download from [FFmpeg official site](https://ffmpeg.org/download.html)
 
 ### Backend
 ```bash
+    # Set up .env
+    cp .env.example .env
+    # Then customize the variables 
+```
+```bash
     cd ./backend
     # Create/Activate a virtual environement
     python3 -m venv venv
@@ -55,11 +60,7 @@ Download from [FFmpeg official site](https://ffmpeg.org/download.html)
     # Run the Backend
     uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-```bash
-    # Set up .env
-    cp .env.example .env
-    # Then customize the variables 
-```
+
 ### Frontend 
 ```bash
     # Navigate to the frontend folder 
