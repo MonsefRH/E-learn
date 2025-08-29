@@ -14,7 +14,7 @@ const TrainerDashboard = () => {
     {
       id: 1,
       title: "Introduction to Machine Learning",
-      enrollments: 45,
+      enrollments: 2,
       modules: 8,
       status: "published",
       completionRate: 78
@@ -22,7 +22,7 @@ const TrainerDashboard = () => {
     {
       id: 2,
       title: "Python Programming Basics",
-      enrollments: 32,
+      enrollments:6,
       modules: 6,
       status: "draft",
       completionRate: 0
@@ -30,7 +30,7 @@ const TrainerDashboard = () => {
     {
       id: 3,
       title: "Data Visualization",
-      enrollments: 28,
+      enrollments: 5,
       modules: 5,
       status: "published",
       completionRate: 65
@@ -69,7 +69,7 @@ const TrainerDashboard = () => {
                 <Users className="h-8 w-8 text-green-600" />
                 <div>
                   <p className="text-2xl font-bold text-green-900">
-                    {myCourses.reduce((sum, course) => sum + course.enrollments, 0)}
+                    5
                   </p>
                   <p className="text-sm text-green-700">Total Students</p>
                 </div>

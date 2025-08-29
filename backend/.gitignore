@@ -9,7 +9,7 @@ build/
 .venv
 env/
 venv/
-/presentations
+/presentation
 *.sqlite3
 *.log
 .DS_Store
